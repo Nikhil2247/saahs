@@ -10,7 +10,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 // ─── Shared Supabase factory (inline to avoid cross-directory imports) ─────────
 
@@ -91,7 +91,10 @@ function validateOnboarding(data: OnboardingFormData): string | null {
 export async function signInWithGoogle(): Promise<never> {
   const supabase = await getSupabase();
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
+  const proto = headersList.get("x-forwarded-proto") || "http";
+  const siteUrl = `${proto}://${host}`;
   const redirectUrl = `${siteUrl}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({

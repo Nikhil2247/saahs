@@ -16,6 +16,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { headers } from "next/headers";
 import type { ProfileUpdate } from "@/types/database";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -79,7 +80,10 @@ export async function signInWithGoogle(): Promise<never> {
   //   Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
   // For local dev: http://localhost:3000/auth/callback
   // For production: https://your-domain.com/auth/callback
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
+  const proto = headersList.get("x-forwarded-proto") || "http";
+  const siteUrl = `${proto}://${host}`;
   const redirectUrl = `${siteUrl}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
