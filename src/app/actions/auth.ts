@@ -80,10 +80,18 @@ export async function signInWithGoogle(): Promise<never> {
   //   Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
   // For local dev: http://localhost:3000/auth/callback
   // For production: https://your-domain.com/auth/callback
-  const headersList = await headers();
-  const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
-  const proto = headersList.get("x-forwarded-proto") || "http";
-  const siteUrl = `${proto}://${host}`;
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!siteUrl) {
+    const headersList = await headers();
+    let host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
+    const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
+    siteUrl = `${proto}://${host}`;
+  }
+
+  if (siteUrl.includes("0.0.0.0")) {
+    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
+  }
+
   const redirectUrl = `${siteUrl}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({

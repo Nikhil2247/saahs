@@ -16,21 +16,34 @@ import { cookies } from "next/headers";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const requestUrl = new URL(request.url);
+  const { searchParams } = requestUrl;
   const code  = searchParams.get("code");
   const error = searchParams.get("error");
+
+  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!baseUrl) {
+    const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const protoHeader = request.headers.get("x-forwarded-proto");
+    const proto = protoHeader || (process.env.NODE_ENV === "production" ? "https" : "http");
+    baseUrl = hostHeader ? `${proto}://${hostHeader}` : requestUrl.origin;
+  }
+
+  if (baseUrl.includes("0.0.0.0")) {
+    baseUrl = baseUrl.replace(/0\.0\.0\.0/g, "localhost");
+  }
 
   // ── OAuth error bubbled back from Google/Supabase ──────────────────────────
   if (error) {
     console.error("[auth/callback] OAuth error:", error, searchParams.get("error_description"));
     return NextResponse.redirect(
-      `${origin}/?auth_error=${encodeURIComponent(error)}`
+      `${baseUrl}/?auth_error=${encodeURIComponent(error)}`
     );
   }
 
   if (!code) {
     console.error("[auth/callback] Missing authorization code.");
-    return NextResponse.redirect(`${origin}/?auth_error=missing_code`);
+    return NextResponse.redirect(`${baseUrl}/?auth_error=missing_code`);
   }
 
   // ── Create a Supabase client with cookie write access ──────────────────────
@@ -69,7 +82,7 @@ export async function GET(request: NextRequest) {
   if (exchangeError || !data.user) {
     console.error("[auth/callback] Code exchange failed:", exchangeError?.message);
     return NextResponse.redirect(
-      `${origin}/?auth_error=${encodeURIComponent(
+      `${baseUrl}/?auth_error=${encodeURIComponent(
         exchangeError?.message ?? "session_error"
       )}`
     );
@@ -85,8 +98,8 @@ export async function GET(request: NextRequest) {
   // First-time users → onboarding; returning users → dashboard (middleware decides sub-path)
   const destination =
     profile?.onboarding_complete === true
-      ? `${origin}/dashboard`
-      : `${origin}/onboarding`;
+      ? `${baseUrl}/dashboard`
+      : `${baseUrl}/onboarding`;
 
   return NextResponse.redirect(destination);
 }
