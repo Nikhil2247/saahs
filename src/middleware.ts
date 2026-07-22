@@ -43,7 +43,20 @@ const COOKIE_DEFAULTS: CookieOptions = {
   maxAge: SESSION_MAX_AGE_SECONDS,
 };
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
+function getRedirectUrl(dest: string, request: NextRequest): URL {
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!siteUrl) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+    const proto = request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "");
+    siteUrl = `${proto}://${host}`;
+  }
+
+  if (siteUrl.includes("0.0.0.0")) {
+    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
+  }
+
+  return new URL(dest, siteUrl);
+}
 
 export async function middleware(request: NextRequest) {
   // Start with a passthrough response so we can mutate cookies on it.
@@ -102,7 +115,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/onboarding")) {
     if (!user) {
       // Not logged in — send to root
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
 
     // Check if the user has already completed onboarding
@@ -114,9 +127,7 @@ export async function middleware(request: NextRequest) {
 
     if (profile?.onboarding_complete === true) {
       // Already onboarded — redirect to student dashboard
-      return NextResponse.redirect(
-        new URL("/dashboard/student", request.url)
-      );
+      return NextResponse.redirect(getRedirectUrl("/dashboard/student", request));
     }
 
     return response;
@@ -125,7 +136,7 @@ export async function middleware(request: NextRequest) {
   // ── Route: /dashboard/admin/* ─────────────────────────────────────────────
   if (pathname.startsWith("/dashboard/admin")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
 
     // Fetch the caller's role
@@ -137,12 +148,12 @@ export async function middleware(request: NextRequest) {
 
     // If onboarding is incomplete, redirect there first
     if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
 
     // Deny access if not an admin role
     if (!profile?.role || !ADMIN_ROLES.has(profile.role as any)) {
-      return NextResponse.redirect(new URL("/dashboard/student", request.url));
+      return NextResponse.redirect(getRedirectUrl("/dashboard/student", request));
     }
 
     return response;
@@ -151,7 +162,7 @@ export async function middleware(request: NextRequest) {
   // ── Route: /dashboard/student/* ───────────────────────────────────────────
   if (pathname.startsWith("/dashboard/student")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
 
     // Check onboarding completion
@@ -162,7 +173,7 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
 
     return response;
@@ -171,7 +182,7 @@ export async function middleware(request: NextRequest) {
   // ── Route: /dashboard (bare) ──────────────────────────────────────────────
   if (pathname === "/dashboard") {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
     // Redirect to the appropriate sub-dashboard based on role
     const { data: profile } = await supabase
@@ -181,14 +192,14 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
 
     const destination = ADMIN_ROLES.has(profile?.role as any)
       ? "/dashboard/admin"
       : "/dashboard/student";
 
-    return NextResponse.redirect(new URL(destination, request.url));
+    return NextResponse.redirect(getRedirectUrl(destination, request));
   }
 
   // ── All other routes ───────────────────────────────────────────────────────

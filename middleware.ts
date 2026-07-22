@@ -43,6 +43,21 @@ const COOKIE_DEFAULTS: CookieOptions = {
 
 // ─── Proxy ───────────────────────────────────────────────────────────────
 
+function getRedirectUrl(dest: string, request: NextRequest): URL {
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!siteUrl) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
+    const proto = request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "");
+    siteUrl = `${proto}://${host}`;
+  }
+
+  if (siteUrl.includes("0.0.0.0")) {
+    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
+  }
+
+  return new URL(dest, siteUrl);
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
@@ -85,7 +100,7 @@ export async function middleware(request: NextRequest) {
   // ── /onboarding ────────────────────────────────────────────────────────────
   if (pathname.startsWith("/onboarding")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
     const { data: profile } = await supabase
       .from("profiles")
@@ -94,7 +109,7 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/dashboard/student", request.url));
+      return NextResponse.redirect(getRedirectUrl("/dashboard/student", request));
     }
     return response;
   }
@@ -102,7 +117,7 @@ export async function middleware(request: NextRequest) {
   // ── /dashboard/admin/* ────────────────────────────────────────────────────
   if (pathname.startsWith("/dashboard/admin")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
     const { data: profile } = await supabase
       .from("profiles")
@@ -111,10 +126,10 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
     if (!profile?.role || !ADMIN_ROLES.has(profile.role)) {
-      return NextResponse.redirect(new URL("/dashboard/student", request.url));
+      return NextResponse.redirect(getRedirectUrl("/dashboard/student", request));
     }
     return response;
   }
@@ -122,7 +137,7 @@ export async function middleware(request: NextRequest) {
   // ── /dashboard/student/* ──────────────────────────────────────────────────
   if (pathname.startsWith("/dashboard/student")) {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
     const { data: profile } = await supabase
       .from("profiles")
@@ -131,7 +146,7 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
     return response;
   }
@@ -139,7 +154,7 @@ export async function middleware(request: NextRequest) {
   // ── /dashboard (bare) ─────────────────────────────────────────────────────
   if (pathname === "/dashboard") {
     if (!user) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(getRedirectUrl("/", request));
     }
     const { data: profile } = await supabase
       .from("profiles")
@@ -148,13 +163,13 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
     const dest = ADMIN_ROLES.has(profile?.role ?? "")
       ? "/dashboard/admin"
       : "/dashboard/student";
 
-    return NextResponse.redirect(new URL(dest, request.url));
+    return NextResponse.redirect(getRedirectUrl(dest, request));
   }
 
   return response;
