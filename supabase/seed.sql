@@ -18,7 +18,7 @@ INSERT INTO public.profiles (
   membership_status, 
   onboarding_complete
 ) VALUES 
-('00000000-0000-0000-0000-000000000001', 'Dr. Rajesh Kumar', 'rajesh.kumar@saahs.org', '+919876543210', 'Physiotherapy', 'BPT', '2022', 'BPT-2022-045', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rajesh', 'President', 'Approved', true),
+('00000000-0000-0000-0000-000000000001', 'Aditya', 'support@saahs.in', NULL, 'Radiotherapy', 'BSc Radiotherapy', '2022', 'RT-2022-001', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aditya', 'President', 'Approved', true),
 ('00000000-0000-0000-0000-000000000002', 'Dr. Sneha Sharma', 'sneha.sharma@saahs.org', '+919876543211', 'Medical Laboratory Technology', 'BSc MLT', '2023', 'MLT-2023-012', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sneha', 'Literary Secretary', 'Approved', true),
 ('00000000-0000-0000-0000-000000000003', 'Dr. Amit Patel', 'amit.patel@saahs.org', '+919876543212', 'Radiography', 'BSc MRIT', '2022', 'MRIT-2022-009', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Amit', 'General Secretary', 'Approved', true)
 ON CONFLICT (id) DO NOTHING;
@@ -49,6 +49,7 @@ INSERT INTO public.events (
   organizer_info, 
   past_archive
 ) VALUES 
+('Teachers'' Day Celebration', 'Honoring our respected faculty and mentors in Allied Health Sciences at NIAHS Auditorium.', 'Cultural', 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop', '2026-09-05 10:00:00+05:30', 'NIAHS Auditorium, PGIMER Sector 12, Chandigarh', 'Organized by SAAHS Executive Committee', false),
 ('National Allied Health Sciences Conference', 'Join industry leaders and academic pioneers for a two-day national conference discussing emerging trends, clinical research, and technologies in Allied Health Sciences.', 'Conferences', 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop', NOW() + INTERVAL '5 days', 'Main Auditorium, PGIMER', 'Organized by SAAHS Executive Committee', false),
 ('Hands-on Workshop: Advanced Life Support', 'A certified clinical workshop focusing on advanced cardiovascular life support (ACLS) and basic life support (BLS) protocols. Highly recommended for final-year students.', 'Workshops', 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&auto=format&fit=crop', NOW() + INTERVAL '12 days', 'Clinical Simulation Lab, Block B', 'Organized by Literary & Academic Committee', false),
 ('Allied Health Cultural Fest - Rhythm 2026', 'Celebrate talent and diversity at our annual cultural fest. Events include dance competitions, music performances, drama, and art exhibitions followed by a guest performance.', 'Cultural', 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop', NOW() + INTERVAL '25 days', 'University Playground', 'Organized by Cultural Society', false),

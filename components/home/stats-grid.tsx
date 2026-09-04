@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { Building2, Users, CalendarCheck, TrendingUp } from "lucide-react"
 import { stats } from "@/lib/data"
 
-const icons = [Building2, Users, CalendarCheck, TrendingUp]
+const icons = [Building2, Users]
 
 function useCountUp(target: number, active: boolean, duration = 1200) {
   const [value, setValue] = useState(0)
@@ -39,15 +39,15 @@ function StatCard({
 }) {
   const count = useCountUp(value, active)
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <div className="flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-        <Icon className="size-5" />
+    <div className="rounded-xl border border-border bg-card p-6 sm:p-8 transition-all hover:border-brand/40">
+      <div className="flex size-12 items-center justify-center rounded-lg bg-brand/10 text-brand">
+        <Icon className="size-6" />
       </div>
-      <p className="mt-4 text-3xl font-bold tracking-tight text-foreground tabular-nums">
+      <p className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums">
         {count.toLocaleString("en-IN")}
         {suffix}
       </p>
-      <p className="mt-1 text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1.5 text-sm font-medium text-muted-foreground">{label}</p>
     </div>
   )
 }
@@ -73,12 +73,15 @@ export function StatsGrid() {
   }, [])
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-14">
-      <div ref={ref} className="grid grid-cols-2 gap-4 lg:grid-cols-4 dotted-grid rounded-xl bg-card p-6 border border-border shadow-sm">
+    <section className="mx-auto max-w-7xl px-4 py-12">
+      <div
+        ref={ref}
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 max-w-4xl mx-auto dotted-grid rounded-2xl bg-card p-6 md:p-8 border border-border shadow-sm"
+      >
         {stats.map((s, i) => (
           <StatCard
             key={s.label}
-            icon={icons[i]}
+            icon={icons[i] || Users}
             value={s.value}
             suffix={s.suffix}
             label={s.label}

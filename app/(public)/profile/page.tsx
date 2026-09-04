@@ -14,7 +14,6 @@ import {
   Phone,
   Building2,
   GraduationCap,
-  Hash,
   CalendarDays,
   LogOut,
   Shield,
@@ -37,7 +36,6 @@ interface Profile {
   department: string | null;
   course: string | null;
   batch_year: string | null;
-  roll_number: string | null;
   role: string | null;
   membership_status: string | null;
   avatar_url: string | null;
@@ -58,7 +56,7 @@ export default function ProfilePage() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, email, phone_number, department, course, batch_year, roll_number, role, membership_status, avatar_url, onboarding_complete")
+        .select("full_name, email, phone_number, department, course, batch_year, role, membership_status, avatar_url, onboarding_complete")
         .eq("id", user.id)
         .single();
 
@@ -111,7 +109,6 @@ export default function ProfilePage() {
     { label: "Department", value: profile.department, icon: Building2 },
     { label: "Programme", value: profile.course, icon: GraduationCap },
     { label: "Batch Year", value: profile.batch_year, icon: CalendarDays },
-    { label: "Roll Number", value: profile.roll_number, icon: Hash },
   ];
 
   return (

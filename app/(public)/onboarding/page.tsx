@@ -10,7 +10,6 @@ import {
   User,
   Phone,
   Building2,
-  Hash,
   CalendarDays,
   AlertCircle,
   CheckCircle2,
@@ -18,17 +17,19 @@ import {
 } from "lucide-react";
 
 const DEPARTMENTS = [
-  "Medical Laboratory Technology",
-  "Radiography & Imaging Technology",
-  "Physiotherapy",
-  "Optometry",
-  "Nutrition & Dietetics",
+  "Medical Laboratory Science (BMLS)",
+  "Medical Radiology & Imaging Technology",
+  "Radiotherapy Technology",
   "Operation Theatre Technology",
-  "Respiratory Therapy",
-  "Anaesthesia Technology",
-  "Dialysis Technology",
-  "Perfusion Technology",
-  "Emergency & Trauma Care",
+  "Medical Technology – Perfusionist",
+  "Embalming & Mortuary Science",
+  "Audiology & Speech-Language Pathology (BASLP)",
+  "Medical Technology – Dialysis Therapy",
+  "Optometry",
+  "Physiotherapy",
+  "Health Information Management",
+  "Public Health",
+  "Medical Animation & Audio-Visual Creation",
 ];
 
 const COURSES = [
@@ -59,7 +60,6 @@ export default function OnboardingPage() {
     department: "",
     course: "",
     batch_year: new Date().getFullYear().toString(),
-    roll_number: "",
   });
 
   const handleChange = (
@@ -214,45 +214,25 @@ export default function OnboardingPage() {
               </select>
             </div>
 
-            {/* Batch Year + Roll Number (side by side) */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="batch_year"
-                  className="flex items-center gap-1.5 text-sm font-medium text-foreground"
-                >
-                  <CalendarDays className="size-3.5" /> Batch Year
-                </label>
-                <input
-                  id="batch_year"
-                  name="batch_year"
-                  type="text"
-                  required
-                  maxLength={4}
-                  value={formData.batch_year}
-                  onChange={handleChange}
-                  placeholder="2023"
-                  className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="roll_number"
-                  className="flex items-center gap-1.5 text-sm font-medium text-foreground"
-                >
-                  <Hash className="size-3.5" /> Roll Number
-                </label>
-                <input
-                  id="roll_number"
-                  name="roll_number"
-                  type="text"
-                  required
-                  value={formData.roll_number}
-                  onChange={handleChange}
-                  placeholder="MLT-2024-001"
-                  className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
+            {/* Batch Year */}
+            <div>
+              <label
+                htmlFor="batch_year"
+                className="flex items-center gap-1.5 text-sm font-medium text-foreground"
+              >
+                <CalendarDays className="size-3.5" /> Batch Year
+              </label>
+              <input
+                id="batch_year"
+                name="batch_year"
+                type="text"
+                required
+                maxLength={4}
+                value={formData.batch_year}
+                onChange={handleChange}
+                placeholder="2023"
+                className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
             </div>
 
             <Button

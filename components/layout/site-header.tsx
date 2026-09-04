@@ -10,7 +10,6 @@ import { BrandMark } from "@/components/brand-mark";
 import { navLinks } from "@/lib/data";
 import { createBrowserClient } from "@supabase/ssr";
 import { signOut } from "@/app/actions/auth";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,8 +98,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <ThemeToggle />
-          
           {loading ? (
             <div className="h-9 w-9 animate-pulse rounded-full bg-secondary hidden sm:block" />
           ) : user ? (

@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -54,8 +53,6 @@ export function DashboardTopbar({ user }: DashboardTopbarProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <ThemeToggle />
-
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" className="relative h-9 w-9 rounded-full" />}>
             <Avatar className="h-9 w-9">

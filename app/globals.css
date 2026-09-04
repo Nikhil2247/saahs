@@ -89,84 +89,6 @@
   --sidebar-ring: oklch(0.34 0.108 258);
 }
 
-.dark {
-  color-scheme: dark;
-  --background: oklch(0.19 0.02 258);
-  --foreground: oklch(0.97 0.006 247);
-  --card: oklch(0.235 0.024 258);
-  --card-foreground: oklch(0.97 0.006 247);
-  --popover: oklch(0.235 0.024 258);
-  --popover-foreground: oklch(0.97 0.006 247);
-  --primary: oklch(0.6 0.13 256);
-  --primary-foreground: oklch(0.15 0.02 258);
-  --secondary: oklch(0.28 0.025 258);
-  --secondary-foreground: oklch(0.97 0.006 247);
-  --muted: oklch(0.28 0.025 258);
-  --muted-foreground: oklch(0.7 0.02 250);
-  --accent: oklch(0.3 0.028 258);
-  --accent-foreground: oklch(0.97 0.006 247);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.13 256);
-  --brand: oklch(0.68 0.14 162);
-  --brand-foreground: oklch(0.16 0.03 160);
-  --brand-muted: oklch(0.33 0.06 162);
-  --chart-1: oklch(0.6 0.13 256);
-  --chart-2: oklch(0.68 0.14 162);
-  --chart-3: oklch(0.55 0.12 240);
-  --chart-4: oklch(0.72 0.13 165);
-  --chart-5: oklch(0.65 0.1 230);
-  --sidebar: oklch(0.235 0.024 258);
-  --sidebar-foreground: oklch(0.97 0.006 247);
-  --sidebar-primary: oklch(0.6 0.13 256);
-  --sidebar-primary-foreground: oklch(0.15 0.02 258);
-  --sidebar-accent: oklch(0.3 0.028 258);
-  --sidebar-accent-foreground: oklch(0.97 0.006 247);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.6 0.13 256);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    color-scheme: dark;
-    --background: oklch(0.19 0.02 258);
-    --foreground: oklch(0.97 0.006 247);
-    --card: oklch(0.235 0.024 258);
-    --card-foreground: oklch(0.97 0.006 247);
-    --popover: oklch(0.235 0.024 258);
-    --popover-foreground: oklch(0.97 0.006 247);
-    --primary: oklch(0.6 0.13 256);
-    --primary-foreground: oklch(0.15 0.02 258);
-    --secondary: oklch(0.28 0.025 258);
-    --secondary-foreground: oklch(0.97 0.006 247);
-    --muted: oklch(0.28 0.025 258);
-    --muted-foreground: oklch(0.7 0.02 250);
-    --accent: oklch(0.3 0.028 258);
-    --accent-foreground: oklch(0.97 0.006 247);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 12%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.6 0.13 256);
-    --brand: oklch(0.68 0.14 162);
-    --brand-foreground: oklch(0.16 0.03 160);
-    --brand-muted: oklch(0.33 0.06 162);
-    --chart-1: oklch(0.6 0.13 256);
-    --chart-2: oklch(0.68 0.14 162);
-    --chart-3: oklch(0.55 0.12 240);
-    --chart-4: oklch(0.72 0.13 165);
-    --chart-5: oklch(0.65 0.1 230);
-    --sidebar: oklch(0.235 0.024 258);
-    --sidebar-foreground: oklch(0.97 0.006 247);
-    --sidebar-primary: oklch(0.6 0.13 256);
-    --sidebar-primary-foreground: oklch(0.15 0.02 258);
-    --sidebar-accent: oklch(0.3 0.028 258);
-    --sidebar-accent-foreground: oklch(0.97 0.006 247);
-    --sidebar-border: oklch(1 0 0 / 12%);
-    --sidebar-ring: oklch(0.6 0.13 256);
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -217,10 +139,6 @@
   background-repeat: no-repeat;
   background-size: 100% 100%;
 }
-.dark .heading-underline::after {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q75 0 150 6 Q225 12 300 4' stroke='%2393c5fd' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-}
-
 /* Brand-green underline variant */
 .heading-underline-brand::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 12' preserveAspectRatio='none'%3E%3Cpath d='M0 10 Q75 0 150 6 Q225 12 300 4' stroke='%2322c55e' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -231,10 +149,6 @@
   background-image: radial-gradient(circle, oklch(0.5 0.02 257 / 0.18) 1px, transparent 1px);
   background-size: 22px 22px;
 }
-.dark .dotted-grid {
-  background-image: radial-gradient(circle, oklch(0.7 0.02 250 / 0.12) 1px, transparent 1px);
-}
-
 /* ── SAAHS watermark text ─────────────────────────────────────────────────── */
 .saahs-watermark {
   position: absolute;
@@ -250,7 +164,4 @@
   pointer-events: none;
   white-space: nowrap;
   overflow: hidden;
-}
-.dark .saahs-watermark {
-  color: rgba(255, 255, 255, 0.04);
 }

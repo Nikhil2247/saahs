@@ -74,17 +74,17 @@ export function Hero() {
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 Established
               </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">2015</dd>
+              <dd className="mt-1 text-lg font-semibold text-foreground">2026</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 Member Departments
               </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">11+</dd>
+              <dd className="mt-1 text-lg font-semibold text-foreground">13</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Active Members
+                Registered Members
               </dt>
               <dd className="mt-1 text-lg font-semibold text-foreground">1,240+</dd>
             </div>

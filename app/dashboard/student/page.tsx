@@ -59,7 +59,7 @@ export default async function StudentDashboardPage() {
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, department, course, batch_year, roll_number, role, membership_status, avatar_url")
+    .select("full_name, email, department, course, batch_year, role, membership_status, avatar_url")
     .eq("id", user.id)
     .single();
 

@@ -28,8 +28,8 @@ const values = [
   },
   {
     icon: Globe,
-    title: "Global Standards",
-    body: "Elevating PGIMER allied health professionals to match international healthcare benchmarks.",
+    title: "National Standards",
+    body: "Elevating PGIMER allied health professionals to match national healthcare benchmarks.",
   }
 ]
 

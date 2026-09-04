@@ -24,19 +24,19 @@ export function PresidentMessage() {
         <span className="relative size-14 shrink-0 overflow-hidden rounded-full ring-1 ring-border">
           <Image
             src="/president.png"
-            alt="Dr. Aditi Sharma, President of SAAHS"
+            alt="Aditya, President of SAAHS"
             fill
             sizes="56px"
             className="object-cover"
           />
         </span>
         <div>
-          <p className="font-semibold text-foreground">Dr. Aditi Sharma</p>
+          <p className="font-semibold text-foreground">Aditya</p>
           <p className="text-sm text-muted-foreground">
             President, SAAHS · 2025–2026
           </p>
           <Badge variant="outline" className="mt-1.5">
-            Medical Laboratory Technology
+            Radiotherapy
           </Badge>
         </div>
       </div>

@@ -15,7 +15,7 @@ export function BrandMark({
     <Link href="/" className={cn("flex items-center gap-3", className)}>
       <span className="relative inline-flex size-10 shrink-0 overflow-hidden rounded-full ring-1 ring-border">
         <Image
-          src="/saahs-logo.png"
+          src="/saahs-logo.jpeg"
           alt="SAAHS seal"
           fill
           sizes="40px"

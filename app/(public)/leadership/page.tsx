@@ -29,7 +29,7 @@ export default function LeadershipPage() {
     <div>
       <PageHeader
         eyebrow="Governance"
-        title="Executive Council 2025 – 2026"
+        title="Governing Body 2025 – 2026"
         description="The elected representatives leading SAAHS across academics, culture, sports and student welfare."
       />
 

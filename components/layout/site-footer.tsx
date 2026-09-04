@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { MapPin, Mail, Phone, AtSign, Link2, Globe, Send } from "lucide-react"
+import { MapPin, Mail, AtSign, Link2, Globe, Send } from "lucide-react"
 import { BrandMark } from "@/components/brand-mark"
 import { navLinks } from "@/lib/data"
 
@@ -85,21 +85,17 @@ export function SiteFooter() {
             <li className="flex gap-2.5">
               <MapPin className="mt-0.5 size-4 shrink-0 text-brand" />
               <span>
-                Room No. 6013, Research Block B,
+                6th Floor, Room No. 6013,
                 <br />
-                PGIMER, Chandigarh — 160012
+                Research Block B, NIAHS,
+                <br />
+                PGIMER, Sector 12, Chandigarh — 160012
               </span>
             </li>
             <li className="flex items-center gap-2.5">
               <Mail className="size-4 shrink-0 text-brand" />
-              <a href="mailto:office@saahs.pgimer.edu.in" className="hover:text-primary-foreground">
-                office@saahs.pgimer.edu.in
-              </a>
-            </li>
-            <li className="flex items-center gap-2.5">
-              <Phone className="size-4 shrink-0 text-brand" />
-              <a href="tel:+911722755555" className="hover:text-primary-foreground">
-                +91 172 275 5555
+              <a href="mailto:support@saahs.in" className="hover:text-primary-foreground">
+                support@saahs.in
               </a>
             </li>
           </ul>

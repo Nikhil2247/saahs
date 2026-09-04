@@ -51,7 +51,6 @@ export interface OnboardingFormData {
   department: string;
   course: string;
   batch_year: string;
-  roll_number: string;
 }
 
 export interface ActionResult<T = void> {
@@ -76,8 +75,6 @@ function validateOnboarding(data: OnboardingFormData): string | null {
     return "Course / programme is required.";
   if (!BATCH_YEAR_REGEX.test(data.batch_year))
     return "Batch year must be a 4-digit year, e.g. 2023.";
-  if (!data.roll_number?.trim() || data.roll_number.trim().length < 2)
-    return "Roll number is required.";
   return null;
 }
 
@@ -158,7 +155,6 @@ export async function completeOnboarding(
       department:          formData.department.trim(),
       course:              formData.course.trim(),
       batch_year:          formData.batch_year.trim(),
-      roll_number:         formData.roll_number.trim(),
       onboarding_complete: true,
     })
     .eq("id", user.id);

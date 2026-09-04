@@ -89,7 +89,7 @@ export default async function ELibraryPage() {
       id: r.id.toString(),
       title: r.title,
       type: displayType,
-      department: 'General',
+      department: 'Coming Soon',
       format: r.mime_type ? r.mime_type.split('/')[1]?.toUpperCase() || 'PDF' : 'PDF',
       size: r.file_size_bytes ? `${(r.file_size_bytes / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
       updated: r.created_at,

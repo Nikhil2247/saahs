@@ -45,16 +45,16 @@ export function DepartmentsGrid() {
                   <div className="flex size-12 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
                     {d.short}
                   </div>
-                  <Badge variant="secondary" className="gap-1">
+                  {/* <Badge variant="secondary" className="gap-1">
                     <Users className="size-3" />
                     {d.members}
-                  </Badge>
+                  </Badge> */},ol0                
                 </div>
                 <h3 className="font-semibold leading-snug text-foreground text-pretty">{d.name}</h3>
-                <div className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
+                {/* <div className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
                   <UserCog className="size-4 shrink-0 text-brand" />
                   <span>Coordinator: {d.coordinator}</span>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           ))}
