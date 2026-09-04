@@ -10,70 +10,32 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createSupabaseServerClient } from "@/src/lib/supabase/server";
 
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+// Resolve redirects against the incoming request's own URL — this always
+// reflects whatever host actually reached the server, so it can never
+// produce an invalid address like "0.0.0.0" the way env/header guessing can.
+function redirectTo(path: string, request: NextRequest) {
+  return NextResponse.redirect(new URL(path, request.url));
+}
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url);
-  const { searchParams } = requestUrl;
+  const { searchParams } = new URL(request.url);
   const code  = searchParams.get("code");
   const error = searchParams.get("error");
-
-  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
-  if (!baseUrl) {
-    const hostHeader = request.headers.get("x-forwarded-host") || request.headers.get("host");
-    const protoHeader = request.headers.get("x-forwarded-proto");
-    const proto = protoHeader || (process.env.NODE_ENV === "production" ? "https" : "http");
-    baseUrl = hostHeader ? `${proto}://${hostHeader}` : requestUrl.origin;
-  }
-
-  if (baseUrl.includes("0.0.0.0")) {
-    baseUrl = baseUrl.replace(/0\.0\.0\.0/g, "localhost");
-  }
 
   // ── OAuth error bubbled back from Google/Supabase ──────────────────────────
   if (error) {
     console.error("[auth/callback] OAuth error:", error, searchParams.get("error_description"));
-    return NextResponse.redirect(
-      `${baseUrl}/?auth_error=${encodeURIComponent(error)}`
-    );
+    return redirectTo(`/?auth_error=${encodeURIComponent(error)}`, request);
   }
 
   if (!code) {
     console.error("[auth/callback] Missing authorization code.");
-    return NextResponse.redirect(`${baseUrl}/?auth_error=missing_code`);
+    return redirectTo("/?auth_error=missing_code", request);
   }
 
-  // ── Create a Supabase client with cookie write access ──────────────────────
-  const cookieStore = await cookies();
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            try {
-              cookieStore.set(name, value, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: SESSION_MAX_AGE,
-                ...options,
-              });
-            } catch {
-              // Safe to ignore in Route Handler context
-            }
-          });
-        },
-      },
-    }
-  );
+  const supabase = await createSupabaseServerClient();
 
   // ── Exchange authorization code for a session ──────────────────────────────
   const { data, error: exchangeError } =
@@ -81,10 +43,9 @@ export async function GET(request: NextRequest) {
 
   if (exchangeError || !data.user) {
     console.error("[auth/callback] Code exchange failed:", exchangeError?.message);
-    return NextResponse.redirect(
-      `${baseUrl}/?auth_error=${encodeURIComponent(
-        exchangeError?.message ?? "session_error"
-      )}`
+    return redirectTo(
+      `/?auth_error=${encodeURIComponent(exchangeError?.message ?? "session_error")}`,
+      request
     );
   }
 
@@ -96,10 +57,8 @@ export async function GET(request: NextRequest) {
     .single();
 
   // First-time users → onboarding; returning users → dashboard (middleware decides sub-path)
-  const destination =
-    profile?.onboarding_complete === true
-      ? `${baseUrl}/dashboard`
-      : `${baseUrl}/onboarding`;
-
-  return NextResponse.redirect(destination);
+  return redirectTo(
+    profile?.onboarding_complete === true ? "/dashboard" : "/onboarding",
+    request
+  );
 }

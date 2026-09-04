@@ -7,34 +7,26 @@
  *  - Route Handlers
  *
  * Uses @supabase/ssr's `createServerClient` which reads/writes cookies via
- * the Next.js `cookies()` API.  Session tokens are explicitly capped at 7 days
- * via the `cookieOptions` configuration below.
+ * the Next.js `cookies()` API, using the library's own cookie options as-is.
  */
 
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-/** Session token lifetime in seconds: 7 days */
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 604 800 s
-
-/**
- * Shared cookie options enforced for every session cookie.
- * - httpOnly:  prevents client-side JS from reading the token.
- * - secure:    HTTPS-only in production.
- * - sameSite:  "lax" is compatible with OAuth redirects.
- * - maxAge:    hard-caps the session lifetime at exactly 7 days.
- */
-const COOKIE_OPTIONS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  path: "/",
-  maxAge: SESSION_MAX_AGE_SECONDS,
-};
-
 // ─── Factory ──────────────────────────────────────────────────────────────────
+//
+// IMPORTANT: cookie options are passed straight through from @supabase/ssr,
+// exactly as the library provides them, with no overrides. Supabase writes
+// several different cookies during the auth flow (the long-lived session
+// token, and — critically — a short-lived PKCE `code_verifier` cookie during
+// signInWithOAuth()). Forcing our own httpOnly/secure/sameSite/maxAge on top
+// of the library's own choices previously broke this: it made the session
+// cookie httpOnly (unreadable by the client-side createBrowserClient(), which
+// needs to read/refresh it) and it force-set `secure: true` in every build
+// where NODE_ENV === "production" (i.e. any `next start`), which makes the
+// browser silently drop the cookie whenever the app is reached over plain
+// HTTP — producing exactly the "PKCE code verifier not found in storage"
+// error. Trust the library; it already sets sane per-cookie options.
 
 /**
  * Creates a Supabase client that is scoped to the current request's cookie
@@ -67,9 +59,8 @@ export async function createSupabaseServerClient() {
         },
 
         /**
-         * Persist session cookies back to the response.
-         * Overrides the library defaults with our COOKIE_OPTIONS so the
-         * 7-day maxAge is applied on every write.
+         * Persist session cookies back to the response, using exactly the
+         * options @supabase/ssr passes in — see note above.
          */
         setAll(
           cookiesToSet: Array<{
@@ -80,11 +71,7 @@ export async function createSupabaseServerClient() {
         ) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, {
-                ...COOKIE_OPTIONS,
-                // Allow the library to override specific options (e.g., delete)
-                ...options,
-              });
+              cookieStore.set(name, value, options);
             });
           } catch {
             // `setAll` can throw if called inside a read-only Server Component

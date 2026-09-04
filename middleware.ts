@@ -29,33 +29,16 @@ const ADMIN_ROLES = new Set([
   "President",
 ]);
 
-// ─── Session lifetime ─────────────────────────────────────────────────────────
-
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
-
-const COOKIE_DEFAULTS: CookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  path: "/",
-  maxAge: SESSION_MAX_AGE_SECONDS,
-};
-
-// ─── Proxy ───────────────────────────────────────────────────────────────
+// ─── Redirects ──────────────────────────────────────────────────────────────
+//
+// Resolve internal redirect targets against the incoming request's own URL
+// (`request.url`) rather than guessing the origin from NEXT_PUBLIC_SITE_URL
+// or forwarded headers. This is the pattern Next.js's own docs use, and it
+// can never land on an invalid address like "0.0.0.0" — it always reflects
+// whatever host actually reached this server.
 
 function getRedirectUrl(dest: string, request: NextRequest): URL {
-  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
-  if (!siteUrl) {
-    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || request.nextUrl.host;
-    const proto = request.headers.get("x-forwarded-proto") || request.nextUrl.protocol.replace(":", "");
-    siteUrl = `${proto}://${host}`;
-  }
-
-  if (siteUrl.includes("0.0.0.0")) {
-    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
-  }
-
-  return new URL(dest, siteUrl);
+  return new URL(dest, request.url);
 }
 
 export async function middleware(request: NextRequest) {
@@ -83,7 +66,7 @@ export async function middleware(request: NextRequest) {
           );
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, { ...COOKIE_DEFAULTS, ...options })
+            response.cookies.set(name, value, options)
           );
         },
       },

@@ -9,39 +9,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies, headers } from "next/headers";
-
-// ─── Shared Supabase factory (inline to avoid cross-directory imports) ─────────
-
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
-
-async function getSupabase() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet: Array<{ name: string; value: string; options?: CookieOptions }>) => {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: SESSION_MAX_AGE,
-                ...options,
-              })
-            );
-          } catch { /* Read-only context — middleware handles refresh */ }
-        },
-      },
-    }
-  );
-}
+import { headers } from "next/headers";
+import { createSupabaseServerClient as getSupabase } from "@/src/lib/supabase/server";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,7 +60,7 @@ export async function signInWithGoogle(): Promise<never> {
   let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
   if (!siteUrl) {
     const headersList = await headers();
-    let host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
+    let host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3030";
     const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
     siteUrl = `${proto}://${host}`;
   }
