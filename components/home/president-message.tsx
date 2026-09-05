@@ -21,7 +21,7 @@ export function PresidentMessage() {
       </blockquote>
 
       <div className="mt-8 flex items-center gap-4 border-t border-border pt-6">
-        <span className="relative size-14 shrink-0 overflow-hidden rounded-full ring-1 ring-border">
+        {/* <span className="relative size-14 shrink-0 overflow-hidden rounded-full ring-1 ring-border">
           <Image
             src="/president.png"
             alt="Aditya, President of SAAHS"
@@ -29,7 +29,7 @@ export function PresidentMessage() {
             sizes="56px"
             className="object-cover"
           />
-        </span>
+        </span> */}
         <div>
           <p className="font-semibold text-foreground">Aditya</p>
           <p className="text-sm text-muted-foreground">
