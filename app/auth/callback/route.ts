@@ -12,27 +12,14 @@
 
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { exchangeCodeForTokens, verifyGoogleIdToken } from "@/lib/auth/google";
 import { createSessionCookie, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/session";
+import { resolveSiteUrl } from "@/lib/site-url";
 
-function redirectTo(path: string, request: NextRequest) {
-  return NextResponse.redirect(new URL(path, request.url));
-}
-
-async function resolveSiteUrl(): Promise<string> {
-  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
-  if (!siteUrl) {
-    const headersList = await headers();
-    const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3030";
-    const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
-    siteUrl = `${proto}://${host}`;
-  }
-  if (siteUrl.includes("0.0.0.0")) {
-    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
-  }
-  return siteUrl;
+async function redirectTo(path: string) {
+  return NextResponse.redirect(new URL(path, await resolveSiteUrl()));
 }
 
 export async function GET(request: NextRequest) {
@@ -43,12 +30,12 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error("[auth/callback] OAuth error:", error, searchParams.get("error_description"));
-    return redirectTo(`/login?auth_error=${encodeURIComponent(error)}`, request);
+    return redirectTo(`/login?auth_error=${encodeURIComponent(error)}`);
   }
 
   if (!code || !state) {
     console.error("[auth/callback] Missing authorization code or state.");
-    return redirectTo("/login?auth_error=missing_code", request);
+    return redirectTo("/login?auth_error=missing_code");
   }
 
   // ── CSRF check: state must match the cookie we set before redirecting to Google ──
@@ -58,7 +45,7 @@ export async function GET(request: NextRequest) {
 
   if (!expectedState || expectedState !== state) {
     console.error("[auth/callback] OAuth state mismatch.");
-    return redirectTo("/login?auth_error=invalid_state", request);
+    return redirectTo("/login?auth_error=invalid_state");
   }
 
   try {
@@ -70,7 +57,7 @@ export async function GET(request: NextRequest) {
     const identity = await verifyGoogleIdToken(tokens.id_token);
 
     if (!identity.emailVerified) {
-      return redirectTo("/login?auth_error=email_not_verified", request);
+      return redirectTo("/login?auth_error=email_not_verified");
     }
 
     const supabase = createSupabaseAdminClient();
@@ -111,15 +98,15 @@ export async function GET(request: NextRequest) {
 
       if (insertError) {
         console.error("[auth/callback] Failed to create profile:", insertError);
-        return redirectTo(`/login?auth_error=${encodeURIComponent("profile_create_failed")}`, request);
+        return redirectTo(`/login?auth_error=${encodeURIComponent("profile_create_failed")}`);
       }
     }
 
     await createSessionCookie(profileId);
 
-    return redirectTo(onboardingComplete ? "/dashboard" : "/onboarding", request);
+    return redirectTo(onboardingComplete ? "/dashboard" : "/onboarding");
   } catch (err) {
     console.error("[auth/callback] Unexpected error:", err);
-    return redirectTo("/login?auth_error=session_error", request);
+    return redirectTo("/login?auth_error=session_error");
   }
 }

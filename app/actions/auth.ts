@@ -12,7 +12,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { headers, cookies } from "next/headers";
+import { cookies } from "next/headers";
 import { randomBytes } from "crypto";
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import {
@@ -21,6 +21,7 @@ import {
   OAUTH_STATE_COOKIE_NAME,
 } from "@/lib/auth/session";
 import { buildGoogleAuthUrl } from "@/lib/auth/google";
+import { resolveSiteUrl } from "@/lib/site-url";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,22 +62,6 @@ function validateOnboarding(data: OnboardingFormData): string | null {
   if (!data.id_card_url?.trim())
     return "Please upload a photo of your ID card.";
   return null;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function resolveSiteUrl(): Promise<string> {
-  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
-  if (!siteUrl) {
-    const headersList = await headers();
-    const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3030";
-    const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
-    siteUrl = `${proto}://${host}`;
-  }
-  if (siteUrl.includes("0.0.0.0")) {
-    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
-  }
-  return siteUrl;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────

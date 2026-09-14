@@ -16,6 +16,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { jwtVerify } from "jose";
 import type { Database } from "@/types/database";
+import { resolveSiteUrlFromRequestHeaders } from "@/lib/site-url";
 
 // ─── Role constants ───────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ const SESSION_COOKIE_NAME = "saahs_session";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getRedirectUrl(dest: string, request: NextRequest): URL {
-  return new URL(dest, request.url);
+  return new URL(dest, resolveSiteUrlFromRequestHeaders(request.headers));
 }
 
 async function getUserIdFromRequest(request: NextRequest): Promise<string | null> {
