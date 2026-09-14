@@ -8,8 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
 import { navLinks } from "@/lib/data";
-import { createBrowserClient } from "@supabase/ssr";
-import { signOut } from "@/app/actions/auth";
+import { signOut, getAuthenticatedUser } from "@/app/actions/auth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,13 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-function getSupabase() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  );
-}
-
 export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
@@ -36,17 +28,9 @@ export function SiteHeader() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = getSupabase();
-
     async function loadUser() {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const { user: authUser, profile } = await getAuthenticatedUser();
       if (!authUser) { setUser(null); setLoading(false); return; }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, role, avatar_url")
-        .eq("id", authUser.id)
-        .single();
 
       const adminRoles = ["Executive Body Member", "Governing Body Member", "Literary Secretary", "Treasurer", "General Secretary", "Vice President", "President"];
       setUser({
@@ -59,12 +43,6 @@ export function SiteHeader() {
     }
 
     loadUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      loadUser();
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const isActive = (href: string) =>

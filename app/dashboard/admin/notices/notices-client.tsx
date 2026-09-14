@@ -37,7 +37,6 @@ export type NoticeDB = {
   title: string
   content: string
   category: string
-  attachment_url: string | null
   is_pinned: boolean
   created_at: string
 }
@@ -228,10 +227,6 @@ export function NoticesClient({
               </label>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Attachment URL (Optional)</label>
-              <Input name="attachment_url" placeholder="https://..." />
-            </div>
-            <div className="space-y-2">
               <label className="text-sm font-medium">Content</label>
               <Textarea name="content" required rows={5} placeholder="Notice content..." />
             </div>
@@ -269,10 +264,6 @@ export function NoticesClient({
                 <input type="checkbox" name="is_pinned" value="true" defaultChecked={editingNotice?.is_pinned} className="rounded border-input" />
                 <span className="text-sm font-medium">Pin this notice</span>
               </label>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Attachment URL (Optional)</label>
-              <Input name="attachment_url" defaultValue={editingNotice?.attachment_url || ''} />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Content</label>

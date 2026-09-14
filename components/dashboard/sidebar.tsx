@@ -11,6 +11,7 @@ import {
   Calendar,
   BookOpen,
   ClipboardList,
+  Building2,
 } from "lucide-react";
 
 const studentLinks = [
@@ -27,6 +28,7 @@ const adminLinks = [
   { href: "/dashboard/admin/events", label: "Events", icon: Calendar },
   { href: "/dashboard/admin/grievances", label: "Grievances", icon: ClipboardList },
   { href: "/dashboard/admin/library", label: "Library", icon: BookOpen },
+  { href: "/dashboard/admin/institutions", label: "Institutions", icon: Building2 },
 ];
 
 export function DashboardSidebar({ isAdmin }: { isAdmin: boolean }) {

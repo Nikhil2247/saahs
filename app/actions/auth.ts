@@ -3,14 +3,24 @@
  *
  * Server Actions — Authentication & Onboarding
  * "use server" — runs exclusively on the server, never in the browser.
+ *
+ * Authentication is our own Google OAuth + signed session cookie (see
+ * lib/auth/google.ts and lib/auth/session.ts) — no Supabase Auth.
  */
 
 "use server";
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
-import { createSupabaseServerClient as getSupabase } from "@/src/lib/supabase/server";
+import { headers, cookies } from "next/headers";
+import { randomBytes } from "crypto";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import {
+  clearSessionCookie,
+  getSession,
+  OAUTH_STATE_COOKIE_NAME,
+} from "@/lib/auth/session";
+import { buildGoogleAuthUrl } from "@/lib/auth/google";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +30,8 @@ export interface OnboardingFormData {
   department: string;
   course: string;
   batch_year: string;
+  institution: string;
+  id_card_url: string;
 }
 
 export interface ActionResult<T = void> {
@@ -44,58 +56,57 @@ function validateOnboarding(data: OnboardingFormData): string | null {
     return "Course / programme is required.";
   if (!BATCH_YEAR_REGEX.test(data.batch_year))
     return "Batch year must be a 4-digit year, e.g. 2023.";
+  if (!data.institution?.trim())
+    return "Institution is required.";
+  if (!data.id_card_url?.trim())
+    return "Please upload a photo of your ID card.";
   return null;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+async function resolveSiteUrl(): Promise<string> {
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!siteUrl) {
+    const headersList = await headers();
+    const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3030";
+    const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
+    siteUrl = `${proto}://${host}`;
+  }
+  if (siteUrl.includes("0.0.0.0")) {
+    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
+  }
+  return siteUrl;
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 /**
- * Initiates Google OAuth via Supabase.
- * Redirects the browser to Google's consent screen.
- * After consent, Google → Supabase → /auth/callback → /onboarding | /dashboard.
+ * Initiates our own Google OAuth flow: sets a CSRF `state` cookie and
+ * redirects the browser to Google's consent screen.
  */
 export async function signInWithGoogle(): Promise<never> {
-  const supabase = await getSupabase();
+  const siteUrl = await resolveSiteUrl();
+  const redirectUri = `${siteUrl}/auth/callback`;
 
-  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
-  if (!siteUrl) {
-    const headersList = await headers();
-    let host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3030";
-    const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
-    siteUrl = `${proto}://${host}`;
-  }
-
-  if (siteUrl.includes("0.0.0.0")) {
-    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
-  }
-
-  const redirectUrl = `${siteUrl}/auth/callback`;
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: redirectUrl,
-      skipBrowserRedirect: false,
-      queryParams: {
-        access_type: "offline",   // ensures refresh token is stored
-        prompt: "select_account", // always show account picker
-      },
-    },
+  const state = randomBytes(24).toString("hex");
+  const cookieStore = await cookies();
+  cookieStore.set(OAUTH_STATE_COOKIE_NAME, state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 10, // 10 minutes — only needs to survive the round trip to Google
   });
 
-  if (error || !data.url) {
-    redirect(`/?auth_error=${encodeURIComponent(error?.message ?? "oauth_failed")}`);
-  }
-
-  redirect(data.url);
+  redirect(buildGoogleAuthUrl(state, redirectUri));
 }
 
 /**
  * Signs the current user out and redirects to the home page.
  */
 export async function signOut(): Promise<never> {
-  const supabase = await getSupabase();
-  await supabase.auth.signOut();
+  await clearSessionCookie();
   redirect("/");
 }
 
@@ -109,13 +120,12 @@ export async function completeOnboarding(
   const validationError = validateOnboarding(formData);
   if (validationError) return { success: false, error: validationError };
 
-  const supabase = await getSupabase();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  const session = await getSession();
+  if (!session) {
     return { success: false, error: "You must be signed in to complete onboarding." };
   }
 
+  const supabase = createSupabaseAdminClient();
   const { error: updateError } = await supabase
     .from("profiles")
     .update({
@@ -124,9 +134,11 @@ export async function completeOnboarding(
       department:          formData.department.trim(),
       course:              formData.course.trim(),
       batch_year:          formData.batch_year.trim(),
+      institution:         formData.institution.trim(),
+      id_card_url:         formData.id_card_url.trim(),
       onboarding_complete: true,
     })
-    .eq("id", user.id);
+    .eq("id", session.userId);
 
   if (updateError) {
     console.error("[auth/completeOnboarding]", updateError);
@@ -142,16 +154,17 @@ export async function completeOnboarding(
  * Returns the current authenticated user + their profile row.
  */
 export async function getAuthenticatedUser() {
-  const supabase = await getSupabase();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
+  if (!session) return { user: null, profile: null };
 
-  if (!user) return { user: null, profile: null };
-
+  const supabase = createSupabaseAdminClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
-  return { user, profile };
+  if (!profile) return { user: null, profile: null };
+
+  return { user: { id: profile.id, email: profile.email }, profile };
 }

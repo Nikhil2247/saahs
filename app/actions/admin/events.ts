@@ -1,16 +1,19 @@
 "use server"
 
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
+import { getSession } from "@/lib/auth/session"
 import { revalidatePath } from "next/cache"
 import { uploadToMinio } from "@/src/lib/minio"
+import type { EventCategory } from "@/types/database"
 
 export async function createEvent(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -28,9 +31,9 @@ export async function createEvent(formData: FormData) {
     }
   }
 
-  let category = 'Academic';
+  let category: EventCategory = 'Academic';
   if (['Academic', 'Cultural', 'Sports', 'Literary', 'Workshops', 'Conferences'].includes(event_type)) {
-    category = event_type;
+    category = event_type as EventCategory;
   } else {
     if (event_type === 'Workshop') category = 'Workshops';
     if (event_type === 'Seminar') category = 'Academic';
@@ -57,12 +60,13 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function updateEvent(id: string, formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -80,9 +84,9 @@ export async function updateEvent(id: string, formData: FormData) {
     }
   }
 
-  let category = 'Academic';
+  let category: EventCategory = 'Academic';
   if (['Academic', 'Cultural', 'Sports', 'Literary', 'Workshops', 'Conferences'].includes(event_type)) {
-    category = event_type;
+    category = event_type as EventCategory;
   } else {
     if (event_type === 'Workshop') category = 'Workshops';
     if (event_type === 'Seminar') category = 'Academic';
@@ -108,12 +112,13 @@ export async function updateEvent(id: string, formData: FormData) {
 }
 
 export async function deleteEvent(id: string) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session) {
     return { success: false, error: "Unauthorized" };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   const { error } = await supabase.from("events").delete().eq("id", id);
 

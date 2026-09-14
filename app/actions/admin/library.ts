@@ -1,14 +1,17 @@
 "use server"
 
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
+import { getSession } from "@/lib/auth/session"
 import { revalidatePath } from "next/cache"
 import { uploadToMinio } from "@/src/lib/minio"
+import type { LibraryCategory } from "@/types/database"
 
 export async function createResource(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!session) return { success: false, error: "Unauthorized" };
+
+  const supabase = createSupabaseAdminClient();
 
   const title = formData.get("title") as string;
   const resource_type = formData.get("resource_type") as string;
@@ -25,7 +28,7 @@ export async function createResource(formData: FormData) {
     return { success: false, error: "File is required" };
   }
 
-  let category = 'Notes';
+  let category: LibraryCategory = 'Notes';
   if (resource_type === 'E-Book') category = 'Books';
   else if (resource_type === 'Past Paper') category = 'Previous Year Papers';
   else if (resource_type === 'Notes') category = 'Notes';
@@ -36,7 +39,7 @@ export async function createResource(formData: FormData) {
     title,
     category,
     file_url,
-    upload_by: user.id
+    upload_by: session.userId
   });
 
   if (error) return { success: false, error: error.message };
@@ -46,10 +49,11 @@ export async function createResource(formData: FormData) {
 }
 
 export async function updateResource(id: string, formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!session) return { success: false, error: "Unauthorized" };
+
+  const supabase = createSupabaseAdminClient();
 
   const title = formData.get("title") as string;
   const resource_type = formData.get("resource_type") as string;
@@ -64,7 +68,7 @@ export async function updateResource(id: string, formData: FormData) {
     }
   }
 
-  let category = 'Notes';
+  let category: LibraryCategory = 'Notes';
   if (resource_type === 'E-Book') category = 'Books';
   else if (resource_type === 'Past Paper') category = 'Previous Year Papers';
   else if (resource_type === 'Notes') category = 'Notes';
@@ -84,10 +88,11 @@ export async function updateResource(id: string, formData: FormData) {
 }
 
 export async function deleteResource(id: string) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  if (!session) return { success: false, error: "Unauthorized" };
+
+  const supabase = createSupabaseAdminClient();
 
   const { error } = await supabase.from("library_resources").delete().eq("id", id);
 

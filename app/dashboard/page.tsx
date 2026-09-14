@@ -7,8 +7,8 @@
  */
 
 import { redirect } from "next/navigation";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import { getSession } from "@/lib/auth/session";
 
 const ADMIN_ROLES = new Set([
   "Executive Body Member",
@@ -20,35 +20,17 @@ const ADMIN_ROLES = new Set([
   "President",
 ]);
 
-async function getServerClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cs: Array<{ name: string; value: string; options?: CookieOptions }>) => {
-          try { cs.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); }
-          catch { /* ignored in server component */ }
-        },
-      },
-    }
-  );
-}
-
 export const dynamic = "force-dynamic";
 
 export default async function DashboardRootPage() {
-  const supabase = await getServerClient();
+  const session = await getSession();
+  if (!session) redirect("/login");
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
+  const supabase = createSupabaseAdminClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, onboarding_complete")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   if (!profile?.onboarding_complete) redirect("/onboarding");

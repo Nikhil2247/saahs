@@ -6,8 +6,8 @@
  */
 
 import { redirect } from "next/navigation";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import { getSession } from "@/lib/auth/session";
 import Link from "next/link";
 import {
   Users,
@@ -19,43 +19,25 @@ import {
   ArrowRight,
   ClipboardList,
   TrendingUp,
+  Building2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-// ─── Supabase factory ──────────────────────────────────────────────────────────
-
-async function getServerClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cs: Array<{ name: string; value: string; options?: CookieOptions }>) => {
-          try { cs.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); }
-          catch { /* ignored */ }
-        },
-      },
-    }
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const supabase = await getServerClient();
+  const session = await getSession();
+  if (!session) redirect("/");
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/");
+  const supabase = createSupabaseAdminClient();
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, role")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   // ── Aggregate stats ────────────────────────────────────────────────────────
@@ -102,6 +84,7 @@ export default async function AdminDashboardPage() {
     { label: "Events", href: "/dashboard/admin/events", icon: Calendar, badge: null, description: "Create & manage events" },
     { label: "E-Library", href: "/dashboard/admin/library", icon: BookOpen, badge: null, description: "Upload resources" },
     { label: "Meetings", href: "/dashboard/admin/meetings", icon: FileText, badge: null, description: "Meeting minutes & records" },
+    { label: "Institutions", href: "/dashboard/admin/institutions", icon: Building2, badge: null, description: "Manage the onboarding institution list" },
   ];
 
   return (

@@ -5,12 +5,21 @@ import { StatsGrid } from "@/components/home/stats-grid"
 import { PresidentMessage } from "@/components/home/president-message"
 import { NoticesFeed } from "@/components/home/notices-feed"
 import { UpcomingEvents } from "@/components/home/upcoming-events"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
 
-export default function HomePage() {
+export const dynamic = "force-dynamic"
+
+export default async function HomePage() {
+  const supabase = createSupabaseAdminClient()
+  const { count: activeMemberCount } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("membership_status", "Approved")
+
   return (
     <>
       <Hero />
-      <StatsGrid />
+      <StatsGrid activeMemberCount={activeMemberCount ?? 0} />
 
       <section className="mx-auto max-w-7xl px-4 pb-14">
         <div className="grid gap-6 lg:grid-cols-2">

@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { createBrowserClient } from "@supabase/ssr";
-import { signOut } from "@/app/actions/auth";
+import { signOut, getAuthenticatedUser } from "@/app/actions/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,13 +20,6 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
-
-function getSupabase() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  );
-}
 
 interface Profile {
   full_name: string | null;
@@ -48,19 +40,11 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = getSupabase();
-
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { user, profile: profileData } = await getAuthenticatedUser();
       if (!user) { router.push("/login"); return; }
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, email, phone_number, department, course, batch_year, role, membership_status, avatar_url, onboarding_complete")
-        .eq("id", user.id)
-        .single();
-
-      setProfile(data as Profile);
+      setProfile(profileData as Profile | null);
       setLoading(false);
     }
 

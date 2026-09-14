@@ -1,25 +1,37 @@
 "use server"
 
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
+import { getSession } from "@/lib/auth/session"
 import { revalidatePath } from "next/cache"
+import type { GrievanceStatus } from "@/types/database"
 
 export async function submitGrievance(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  
-  const title = formData.get("subject") as string;
-  const category = formData.get("category") as string;
-  const description = formData.get("description") as string;
+  const title = ((formData.get("subject") as string) ?? "").trim();
+  const category = ((formData.get("category") as string) ?? "").trim();
+  const description = ((formData.get("description") as string) ?? "").trim();
   const isAnonymous = formData.get("anonymous") === "true";
-  
-  let userId = null;
+
+  if (title.length < 5 || title.length > 255) {
+    return { success: false, error: "Subject must be between 5 and 255 characters." };
+  }
+  if (description.length < 10) {
+    return { success: false, error: "Description must be at least 10 characters." };
+  }
+  if (!category) {
+    return { success: false, error: "Category is required." };
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  let userId: string | null = null;
   if (!isAnonymous) {
-    const { data: { user } } = await supabase.auth.getUser();
-    userId = user?.id || null;
+    const session = await getSession();
+    userId = session?.userId ?? null;
   }
 
   const ticket_number = "GRV-" + Math.random().toString(36).substring(2, 6).toUpperCase();
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("grievances")
     .insert({
       ticket_number,
@@ -28,27 +40,27 @@ export async function submitGrievance(formData: FormData) {
       description,
       is_anonymous: isAnonymous,
       user_id: userId,
-      status: "Open"
+      status: "Submitted",
     });
 
   if (error) {
     console.error("Grievance insertion error:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: "Failed to submit grievance. Please try again." };
   }
 
   revalidatePath("/dashboard/admin/grievances");
   revalidatePath("/help-desk");
-  
+
   return { success: true, ticket_number };
 }
 
 export async function updateGrievanceStatus(id: string, formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  const supabase = createSupabaseAdminClient();
 
-  const status = formData.get("status") as string;
+  const status = formData.get("status") as GrievanceStatus;
 
   const { error } = await supabase.from("grievances").update({ status }).eq("id", id);
 
@@ -59,10 +71,10 @@ export async function updateGrievanceStatus(id: string, formData: FormData) {
 }
 
 export async function deleteGrievance(id: string) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  const supabase = createSupabaseAdminClient();
 
   const { error } = await supabase.from("grievances").delete().eq("id", id);
 
@@ -71,4 +83,3 @@ export async function deleteGrievance(id: string) {
   revalidatePath("/dashboard/admin/grievances");
   return { success: true };
 }
-

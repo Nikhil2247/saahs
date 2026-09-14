@@ -1,64 +1,125 @@
 /**
  * app/auth/callback/route.ts
  *
- * OAuth Callback Route Handler — lives in the Next.js App Router root.
+ * OAuth Callback Route Handler — Google redirects here after consent.
  *
- * Supabase redirects here after the Google OAuth consent screen.
- * 1. Exchanges the authorization code for a Supabase session.
- * 2. Checks whether the user has completed the onboarding questionnaire.
- * 3. Routes → /onboarding (first-time) or /dashboard (returning user).
+ * 1. Validates the CSRF `state` against the cookie set in signInWithGoogle().
+ * 2. Exchanges the authorization code for tokens and verifies the ID token.
+ * 3. Upserts a `profiles` row keyed by the Google account id (`google_id`).
+ * 4. Issues our own session cookie.
+ * 5. Routes → /onboarding (first-time) or /dashboard (returning user).
  */
 
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/src/lib/supabase/server";
+import { cookies, headers } from "next/headers";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import { exchangeCodeForTokens, verifyGoogleIdToken } from "@/lib/auth/google";
+import { createSessionCookie, OAUTH_STATE_COOKIE_NAME } from "@/lib/auth/session";
 
-// Resolve redirects against the incoming request's own URL — this always
-// reflects whatever host actually reached the server, so it can never
-// produce an invalid address like "0.0.0.0" the way env/header guessing can.
 function redirectTo(path: string, request: NextRequest) {
   return NextResponse.redirect(new URL(path, request.url));
 }
 
+async function resolveSiteUrl(): Promise<string> {
+  let siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (!siteUrl) {
+    const headersList = await headers();
+    const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3030";
+    const proto = headersList.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
+    siteUrl = `${proto}://${host}`;
+  }
+  if (siteUrl.includes("0.0.0.0")) {
+    siteUrl = siteUrl.replace(/0\.0\.0\.0/g, "localhost");
+  }
+  return siteUrl;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const code  = searchParams.get("code");
+  const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const state = searchParams.get("state");
 
-  // ── OAuth error bubbled back from Google/Supabase ──────────────────────────
   if (error) {
     console.error("[auth/callback] OAuth error:", error, searchParams.get("error_description"));
-    return redirectTo(`/?auth_error=${encodeURIComponent(error)}`, request);
+    return redirectTo(`/login?auth_error=${encodeURIComponent(error)}`, request);
   }
 
-  if (!code) {
-    console.error("[auth/callback] Missing authorization code.");
-    return redirectTo("/?auth_error=missing_code", request);
+  if (!code || !state) {
+    console.error("[auth/callback] Missing authorization code or state.");
+    return redirectTo("/login?auth_error=missing_code", request);
   }
 
-  const supabase = await createSupabaseServerClient();
+  // ── CSRF check: state must match the cookie we set before redirecting to Google ──
+  const cookieStore = await cookies();
+  const expectedState = cookieStore.get(OAUTH_STATE_COOKIE_NAME)?.value;
+  cookieStore.delete(OAUTH_STATE_COOKIE_NAME);
 
-  // ── Exchange authorization code for a session ──────────────────────────────
-  const { data, error: exchangeError } =
-    await supabase.auth.exchangeCodeForSession(code);
-
-  if (exchangeError || !data.user) {
-    console.error("[auth/callback] Code exchange failed:", exchangeError?.message);
-    return redirectTo(
-      `/?auth_error=${encodeURIComponent(exchangeError?.message ?? "session_error")}`,
-      request
-    );
+  if (!expectedState || expectedState !== state) {
+    console.error("[auth/callback] OAuth state mismatch.");
+    return redirectTo("/login?auth_error=invalid_state", request);
   }
 
-  // ── Check onboarding status ────────────────────────────────────────────────
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("onboarding_complete")
-    .eq("id", data.user.id)
-    .single();
+  try {
+    const siteUrl = await resolveSiteUrl();
+    const redirectUri = `${siteUrl}/auth/callback`;
 
-  // First-time users → onboarding; returning users → dashboard (middleware decides sub-path)
-  return redirectTo(
-    profile?.onboarding_complete === true ? "/dashboard" : "/onboarding",
-    request
-  );
+    // ── Exchange code for tokens, then verify the ID token's signature ──────────
+    const tokens = await exchangeCodeForTokens(code, redirectUri);
+    const identity = await verifyGoogleIdToken(tokens.id_token);
+
+    if (!identity.emailVerified) {
+      return redirectTo("/login?auth_error=email_not_verified", request);
+    }
+
+    const supabase = createSupabaseAdminClient();
+
+    // ── Find an existing profile by Google id, else create one ──────────────────
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id, onboarding_complete")
+      .eq("google_id", identity.sub)
+      .maybeSingle();
+
+    let profileId: string;
+    let onboardingComplete: boolean;
+
+    if (existingProfile) {
+      profileId = existingProfile.id;
+      onboardingComplete = existingProfile.onboarding_complete;
+
+      // Keep name/avatar in sync with Google on every login.
+      await supabase
+        .from("profiles")
+        .update({
+          full_name: identity.name ?? undefined,
+          avatar_url: identity.picture ?? undefined,
+        })
+        .eq("id", profileId);
+    } else {
+      profileId = randomUUID();
+      onboardingComplete = false;
+
+      const { error: insertError } = await supabase.from("profiles").insert({
+        id: profileId,
+        google_id: identity.sub,
+        email: identity.email,
+        full_name: identity.name,
+        avatar_url: identity.picture,
+      });
+
+      if (insertError) {
+        console.error("[auth/callback] Failed to create profile:", insertError);
+        return redirectTo(`/login?auth_error=${encodeURIComponent("profile_create_failed")}`, request);
+      }
+    }
+
+    await createSessionCookie(profileId);
+
+    return redirectTo(onboardingComplete ? "/dashboard" : "/onboarding", request);
+  } catch (err) {
+    console.error("[auth/callback] Unexpected error:", err);
+    return redirectTo("/login?auth_error=session_error", request);
+  }
 }

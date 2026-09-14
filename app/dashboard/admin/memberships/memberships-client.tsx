@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { updateMemberRole, deleteMember } from "@/app/actions/admin/memberships"
+import { reviewMembership } from "@/app/actions/memberships"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -27,7 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreHorizontal, ShieldAlert, Trash, ChevronLeft, ChevronRight } from "lucide-react"
+import { MoreHorizontal, ShieldAlert, Trash, ChevronLeft, ChevronRight, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
@@ -36,6 +37,7 @@ export type ProfileDB = {
   full_name: string
   email: string
   role: string
+  membership_status: string
   department: string | null
   course: string | null
   avatar_url: string | null
@@ -55,6 +57,19 @@ export function MembershipsClient({
   const [editingRole, setEditingRole] = useState<ProfileDB | null>(null)
   const [deletingMember, setDeletingMember] = useState<ProfileDB | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isReviewing, startReviewing] = useTransition()
+
+  const handleReview = (profile: ProfileDB, decision: "Approved" | "Rejected") => {
+    startReviewing(async () => {
+      const result = await reviewMembership(profile.id, decision)
+      if (result.success) {
+        toast.success(`Membership ${decision.toLowerCase()}`)
+        router.refresh()
+      } else {
+        toast.error(result.error || "Failed to update membership status")
+      }
+    })
+  }
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -103,13 +118,14 @@ export function MembershipsClient({
               <TableHead>Email</TableHead>
               <TableHead>Department</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Membership</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {profiles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                   No members found.
                 </TableCell>
               </TableRow>
@@ -130,6 +146,20 @@ export function MembershipsClient({
                       {profile.role}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        profile.membership_status === "Approved"
+                          ? "border-green-300 bg-green-100 text-green-800"
+                          : profile.membership_status === "Rejected"
+                          ? "border-red-300 bg-red-100 text-red-800"
+                          : "border-yellow-300 bg-yellow-100 text-yellow-800"
+                      }
+                    >
+                      {profile.membership_status}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -139,6 +169,24 @@ export function MembershipsClient({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuGroup>
+                          {profile.membership_status === "Pending" && (
+                            <>
+                              <DropdownMenuItem
+                                disabled={isReviewing}
+                                onClick={() => handleReview(profile, "Approved")}
+                                className="text-green-700 focus:text-green-700"
+                              >
+                                <Check className="mr-2 h-4 w-4" /> Approve Membership
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={isReviewing}
+                                onClick={() => handleReview(profile, "Rejected")}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <X className="mr-2 h-4 w-4" /> Reject Membership
+                              </DropdownMenuItem>
+                            </>
+                          )}
                           <DropdownMenuItem onClick={() => setEditingRole(profile)}>
                             <ShieldAlert className="mr-2 h-4 w-4" /> Change Role
                           </DropdownMenuItem>

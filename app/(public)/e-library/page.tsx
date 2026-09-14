@@ -1,4 +1,5 @@
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
+import { getSession } from "@/lib/auth/session"
 import { PageHeader } from "@/components/page-header"
 import { LibraryBrowser } from "./library-browser"
 import { ShieldAlert, LogIn } from "lucide-react"
@@ -8,10 +9,9 @@ import Link from "next/link"
 export const dynamic = 'force-dynamic';
 
 export default async function ELibraryPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (!user) {
+  if (!session) {
     return (
       <div>
         <PageHeader
@@ -36,10 +36,11 @@ export default async function ELibraryPage() {
   }
 
   // Get user profile role
+  const supabase = createSupabaseAdminClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   const allowedRoles = [

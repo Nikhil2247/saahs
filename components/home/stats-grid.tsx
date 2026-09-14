@@ -52,7 +52,7 @@ function StatCard({
   )
 }
 
-export function StatsGrid() {
+export function StatsGrid({ activeMemberCount }: { activeMemberCount: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(false)
 
@@ -72,13 +72,17 @@ export function StatsGrid() {
     return () => observer.disconnect()
   }, [])
 
+  const liveStats = stats.map((s) =>
+    s.label === "Active Members" ? { ...s, value: activeMemberCount, suffix: "" } : s
+  )
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-12">
       <div
         ref={ref}
         className="grid grid-cols-1 gap-6 sm:grid-cols-2 max-w-4xl mx-auto dotted-grid rounded-2xl bg-card p-6 md:p-8 border border-border shadow-sm"
       >
-        {stats.map((s, i) => (
+        {liveStats.map((s, i) => (
           <StatCard
             key={s.label}
             icon={icons[i] || Users}

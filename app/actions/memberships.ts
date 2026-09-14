@@ -13,7 +13,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/app/actions/_supabase";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import { getSession } from "@/lib/auth/session";
 import type { ActionResult } from "@/app/actions/auth";
 import type { MembershipStatus, ProfileRow, UserRole } from "@/types/database";
 
@@ -31,23 +32,20 @@ const ADMIN_ROLES: UserRole[] = ["President", "Vice President", "General Secreta
  *  - The profile row already exists (created by the auth trigger).
  */
 export async function applyForMembership(): Promise<ActionResult> {
-  const supabase = await createSupabaseServerClient();
-
   // 1. Authenticate caller
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const session = await getSession();
 
-  if (authError || !user) {
+  if (!session) {
     return { success: false, error: "You must be signed in to apply for membership." };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   // 2. Fetch current profile
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("membership_status, onboarding_complete")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   if (profileError || !profile) {
@@ -75,7 +73,7 @@ export async function applyForMembership(): Promise<ActionResult> {
   const { error: updateError } = await supabase
     .from("profiles")
     .update({ membership_status: "Pending" })
-    .eq("id", user.id);
+    .eq("id", session.userId);
 
   if (updateError) {
     console.error("[memberships/apply] Update error:", updateError);
@@ -106,22 +104,19 @@ export async function reviewMembership(
     return { success: false, error: "Profile ID is required." };
   }
 
-  const supabase = await createSupabaseServerClient();
+  const session = await getSession();
 
   // 1. Authenticate and authorise caller
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!session) {
     return { success: false, error: "Authentication required." };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   const { data: adminProfile, error: adminError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   if (adminError || !adminProfile) {
@@ -177,20 +172,18 @@ export async function reviewMembership(
 export async function getMyMembershipStatus(): Promise<
   ActionResult<{ status: MembershipStatus; role: UserRole }>
 > {
-  const supabase = await createSupabaseServerClient();
+  const session = await getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session) {
     return { success: false, error: "Not authenticated." };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("profiles")
     .select("membership_status, role")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   if (error || !data) {
@@ -209,20 +202,18 @@ export async function getMyMembershipStatus(): Promise<
 export async function listPendingMemberships(): Promise<
   ActionResult<Pick<ProfileRow, "id" | "full_name" | "email" | "department" | "course" | "batch_year" | "roll_number" | "created_at">[]>
 > {
-  const supabase = await createSupabaseServerClient();
+  const session = await getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!session) {
     return { success: false, error: "Authentication required." };
   }
+
+  const supabase = createSupabaseAdminClient();
 
   const { data: admin } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   if (!admin || !ADMIN_ROLES.includes(admin.role as UserRole)) {

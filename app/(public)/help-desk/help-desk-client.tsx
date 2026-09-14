@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, MessageSquare, Clock, AlertCircle } from "lucide-react"
+import { CheckCircle2, MessageSquare, Clock, AlertCircle, Ban } from "lucide-react"
 import { submitGrievance } from "@/app/actions/grievances"
 
 export type GrievanceDB = {
@@ -22,27 +22,29 @@ export function HelpDeskClient({ grievances }: { grievances: GrievanceDB[] }) {
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [ticketId, setTicketId] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
+    setSubmitError(null)
+
     const formData = new FormData(e.currentTarget)
     const result = await submitGrievance(formData)
-    
+
     setIsSubmitting(false)
     if (result.success) {
       setSubmitted(true)
       setTicketId(result.ticket_number || null)
       e.currentTarget.reset()
-      
+
       setTimeout(() => {
         setSubmitted(false)
         setShowForm(false)
         setTicketId(null)
       }, 5000)
     } else {
-      alert("Error submitting grievance: " + result.error)
+      setSubmitError(result.error || "Something went wrong. Please try again.")
     }
   }
 
@@ -50,9 +52,12 @@ export function HelpDeskClient({ grievances }: { grievances: GrievanceDB[] }) {
     switch (status) {
       case "Resolved":
         return <CheckCircle2 className="size-4 text-green-600" />
-      case "In Review":
+      case "Under Review":
+      case "In Progress":
         return <Clock className="size-4 text-blue-600" />
-      case "Open":
+      case "Closed":
+        return <Ban className="size-4 text-gray-500" />
+      case "Submitted":
         return <AlertCircle className="size-4 text-yellow-600" />
       default:
         return null
@@ -63,9 +68,12 @@ export function HelpDeskClient({ grievances }: { grievances: GrievanceDB[] }) {
     switch (status) {
       case "Resolved":
         return "bg-green-100 text-green-800 border-green-300"
-      case "In Review":
+      case "Under Review":
+      case "In Progress":
         return "bg-blue-100 text-blue-800 border-blue-300"
-      case "Open":
+      case "Closed":
+        return "bg-gray-100 text-gray-800 border-gray-300"
+      case "Submitted":
         return "bg-yellow-100 text-yellow-800 border-yellow-300"
       default:
         return ""
@@ -109,6 +117,13 @@ export function HelpDeskClient({ grievances }: { grievances: GrievanceDB[] }) {
         <div className="mb-8 rounded-lg border border-border bg-card p-6">
           <h2 className="mb-6 text-2xl font-bold text-foreground">Submit Your Grievance</h2>
 
+          {submitError && (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+              <AlertCircle className="size-4 flex-shrink-0" />
+              <p className="text-sm">{submitError}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
@@ -119,6 +134,8 @@ export function HelpDeskClient({ grievances }: { grievances: GrievanceDB[] }) {
                 name="subject"
                 type="text"
                 required
+                minLength={5}
+                maxLength={255}
                 placeholder="Brief title of your grievance"
                 className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -151,7 +168,8 @@ export function HelpDeskClient({ grievances }: { grievances: GrievanceDB[] }) {
                 name="description"
                 rows={5}
                 required
-                placeholder="Please describe your issue in detail..."
+                minLength={10}
+                placeholder="Please describe your issue in detail (at least 10 characters)..."
                 className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-y"
               />
             </div>

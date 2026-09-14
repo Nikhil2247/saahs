@@ -66,7 +66,8 @@ export type LibraryCategory =
 // ─── Table row types ──────────────────────────────────────────────────────────
 
 export interface ProfileRow {
-  id: string;                         // UUID — FK to auth.users
+  id: string;                         // UUID — our own primary key (no longer FK'd to Supabase Auth)
+  google_id: string | null;           // Google "sub" claim — stable identity from our OAuth flow
   full_name: string | null;
   email: string;
   phone_number: string | null;
@@ -74,6 +75,8 @@ export interface ProfileRow {
   course: string | null;
   batch_year: string | null;          // e.g. "2023"
   roll_number: string | null;
+  institution: string | null;         // e.g. "PGIMER" — selected from public.institutions
+  id_card_url: string | null;         // Cloudinary delivery URL for the uploaded ID card
   avatar_url: string | null;          // Cloudinary delivery URL
   role: UserRole;
   membership_status: MembershipStatus;
@@ -84,6 +87,7 @@ export interface ProfileRow {
 
 export interface ProfileInsert {
   id: string;
+  google_id?: string | null;
   full_name?: string | null;
   email: string;
   phone_number?: string | null;
@@ -91,6 +95,8 @@ export interface ProfileInsert {
   course?: string | null;
   batch_year?: string | null;
   roll_number?: string | null;
+  institution?: string | null;
+  id_card_url?: string | null;
   avatar_url?: string | null;
   role?: UserRole;
   membership_status?: MembershipStatus;
@@ -98,6 +104,22 @@ export interface ProfileInsert {
 }
 
 export type ProfileUpdate = Partial<ProfileInsert>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface InstitutionRow {
+  id: number;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface InstitutionInsert {
+  name: string;
+  is_active?: boolean;
+}
+
+export type InstitutionUpdate = Partial<InstitutionInsert>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -272,6 +294,12 @@ export interface Database {
         Row: ProfileRow;
         Insert: ProfileInsert;
         Update: ProfileUpdate;
+        Relationships: [];
+      };
+      institutions: {
+        Row: InstitutionRow;
+        Insert: InstitutionInsert;
+        Update: InstitutionUpdate;
         Relationships: [];
       };
       notices: {

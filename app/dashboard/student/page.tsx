@@ -9,8 +9,8 @@
  */
 
 import { redirect } from "next/navigation";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
+import { getSession } from "@/lib/auth/session";
 import Link from "next/link";
 import {
   Bell,
@@ -26,41 +26,21 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-// ─── Supabase factory ──────────────────────────────────────────────────────────
-
-async function getServerClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cs: Array<{ name: string; value: string; options?: CookieOptions }>) => {
-          try { cs.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); }
-          catch { /* ignored in server component */ }
-        },
-      },
-    }
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 
 export default async function StudentDashboardPage() {
-  const supabase = await getServerClient();
+  const session = await getSession();
+  if (!session) redirect("/");
 
-  // Verify session
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/");
+  const supabase = createSupabaseAdminClient();
 
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, email, department, course, batch_year, role, membership_status, avatar_url")
-    .eq("id", user.id)
+    .eq("id", session.userId)
     .single();
 
   if (!profile?.full_name) redirect("/onboarding");
@@ -86,7 +66,7 @@ export default async function StudentDashboardPage() {
   const { data: myTickets } = await supabase
     .from("grievances")
     .select("ticket_number, title, status, created_at")
-    .eq("user_id", user.id)
+    .eq("user_id", session.userId)
     .eq("is_anonymous", false)
     .order("created_at", { ascending: false })
     .limit(3);

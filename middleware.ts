@@ -1,11 +1,10 @@
 /**
  * middleware.ts  (project root)
  *
- * Next.js Edge Middleware — runs before every matched request.
+ * Next.js Middleware — runs before every matched request.
  *
  * Responsibilities:
- *  1. Refresh the Supabase session token on every request so cookies remain
- *     valid and the 7-day sliding window resets on activity.
+ *  1. Verify our own session cookie (see lib/auth/session.ts) — no Supabase Auth.
  *  2. Guard /dashboard/admin/* routes: require an executive or administrative
  *     role (Executive Body Member and above).
  *  3. Guard /dashboard/student/* routes: require any authenticated session.
@@ -13,8 +12,10 @@
  *  5. Redirect unauthenticated requests to the root landing page.
  */
 
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { jwtVerify } from "jose";
+import type { Database } from "@/types/database";
 
 // ─── Role constants ───────────────────────────────────────────────────────────
 
@@ -29,83 +30,68 @@ const ADMIN_ROLES = new Set([
   "President",
 ]);
 
-// ─── Redirects ──────────────────────────────────────────────────────────────
-//
-// Resolve internal redirect targets against the incoming request's own URL
-// (`request.url`) rather than guessing the origin from NEXT_PUBLIC_SITE_URL
-// or forwarded headers. This is the pattern Next.js's own docs use, and it
-// can never land on an invalid address like "0.0.0.0" — it always reflects
-// whatever host actually reached this server.
+const SESSION_COOKIE_NAME = "saahs_session";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getRedirectUrl(dest: string, request: NextRequest): URL {
   return new URL(dest, request.url);
 }
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
+async function getUserIdFromRequest(request: NextRequest): Promise<string | null> {
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!token) return null;
 
-  const supabase = createServerClient(
+  try {
+    const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
+    const { payload } = await jwtVerify(token, secret);
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+// Edge-safe: a plain service-role client with no cookie/session plumbing.
+function getAdminClient() {
+  return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(
-          cookiesToSet: Array<{
-            name: string;
-            value: string;
-            options?: CookieOptions;
-          }>
-        ) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
   );
+}
 
-  // Always use getUser() — validates JWT server-side and refreshes session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const userId = await getUserIdFromRequest(request);
 
   // ── /onboarding ────────────────────────────────────────────────────────────
   if (pathname.startsWith("/onboarding")) {
-    if (!user) {
+    if (!userId) {
       return NextResponse.redirect(getRedirectUrl("/", request));
     }
+    const supabase = getAdminClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_complete")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
 
     if (profile?.onboarding_complete) {
       return NextResponse.redirect(getRedirectUrl("/dashboard/student", request));
     }
-    return response;
+    return NextResponse.next();
   }
 
   // ── /dashboard/admin/* ────────────────────────────────────────────────────
   if (pathname.startsWith("/dashboard/admin")) {
-    if (!user) {
+    if (!userId) {
       return NextResponse.redirect(getRedirectUrl("/", request));
     }
+    const supabase = getAdminClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("role, onboarding_complete")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
 
     if (!profile?.onboarding_complete) {
@@ -114,35 +100,37 @@ export async function middleware(request: NextRequest) {
     if (!profile?.role || !ADMIN_ROLES.has(profile.role)) {
       return NextResponse.redirect(getRedirectUrl("/dashboard/student", request));
     }
-    return response;
+    return NextResponse.next();
   }
 
   // ── /dashboard/student/* ──────────────────────────────────────────────────
   if (pathname.startsWith("/dashboard/student")) {
-    if (!user) {
+    if (!userId) {
       return NextResponse.redirect(getRedirectUrl("/", request));
     }
+    const supabase = getAdminClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_complete")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
 
     if (!profile?.onboarding_complete) {
       return NextResponse.redirect(getRedirectUrl("/onboarding", request));
     }
-    return response;
+    return NextResponse.next();
   }
 
   // ── /dashboard (bare) ─────────────────────────────────────────────────────
   if (pathname === "/dashboard") {
-    if (!user) {
+    if (!userId) {
       return NextResponse.redirect(getRedirectUrl("/", request));
     }
+    const supabase = getAdminClient();
     const { data: profile } = await supabase
       .from("profiles")
       .select("role, onboarding_complete")
-      .eq("id", user.id)
+      .eq("id", userId)
       .single();
 
     if (!profile?.onboarding_complete) {
@@ -155,7 +143,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(getRedirectUrl(dest, request));
   }
 
-  return response;
+  return NextResponse.next();
 }
 
 // ─── Matcher ──────────────────────────────────────────────────────────────────

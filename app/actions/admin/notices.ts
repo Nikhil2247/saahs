@@ -1,27 +1,27 @@
 "use server"
 
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
+import { getSession } from "@/lib/auth/session"
 import { revalidatePath } from "next/cache"
+import type { NoticeCategory } from "@/types/database"
 
 export async function createNotice(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  const supabase = createSupabaseAdminClient();
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
   const category = formData.get("category") as string;
-  const attachment_url = formData.get("attachment_url") as string || null;
   const is_pinned = formData.get("is_pinned") === "true";
 
   const { error } = await supabase.from("notices").insert({
     title,
     content,
-    category,
-    attachment_url,
+    category: category as NoticeCategory,
     is_pinned,
-    created_by: user.id
+    created_by: session.userId,
   });
 
   if (error) return { success: false, error: error.message };
@@ -33,22 +33,20 @@ export async function createNotice(formData: FormData) {
 }
 
 export async function updateNotice(id: string, formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  const supabase = createSupabaseAdminClient();
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
   const category = formData.get("category") as string;
-  const attachment_url = formData.get("attachment_url") as string || null;
   const is_pinned = formData.get("is_pinned") === "true";
 
   const { error } = await supabase.from("notices").update({
     title,
     content,
-    category,
-    attachment_url,
+    category: category as NoticeCategory,
     is_pinned,
   }).eq("id", id);
 
@@ -61,10 +59,10 @@ export async function updateNotice(id: string, formData: FormData) {
 }
 
 export async function deleteNotice(id: string) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getSession();
+  if (!session) return { success: false, error: "Unauthorized" };
 
-  if (!user) return { success: false, error: "Unauthorized" };
+  const supabase = createSupabaseAdminClient();
 
   const { error } = await supabase.from("notices").delete().eq("id", id);
 

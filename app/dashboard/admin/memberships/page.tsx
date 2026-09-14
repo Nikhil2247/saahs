@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
 import { MembershipsClient, ProfileDB } from "./memberships-client"
 
 export const dynamic = 'force-dynamic';
@@ -14,8 +14,8 @@ export default async function AdminMembershipsPage({
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const supabase = await createSupabaseServerClient();
-  
+  const supabase = createSupabaseAdminClient();
+
   const { data: profiles, count, error } = await supabase
     .from('profiles')
     .select('*', { count: 'exact' })

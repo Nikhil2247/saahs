@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/src/lib/supabase/server"
+import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
 import { GrievancesClient, GrievanceDB } from "./grievances-client"
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export default async function AdminGrievancesPage({
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   
   const { data: grievances, count, error } = await supabase
     .from('grievances')
