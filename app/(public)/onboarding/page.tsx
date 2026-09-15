@@ -422,14 +422,17 @@ export default function OnboardingPage() {
                   {/* What you get */}
                   <ul className="space-y-1.5 text-sm text-muted-foreground">
                     {[
-                      "Full E-Library access",
-                      "Event participation & certificates",
-                      "Official SAAHS membership card",
-                      "Access to all notices & circulars",
+                      "📚 e-Library Access",
+                      "📖 Exclusive Study Material",
+                      "🎓 Discounted Registration",
+                      "💻 e-Classes & Online Lectures",
+                      "🧑‍⚕️ Academic & Professional Networking",
+                      "🏥 Association Activities",
+                      "📢 Member Updates & Opportunities",
+                      "🤝 Student Community Benefits",
                     ].map((benefit) => (
                       <li key={benefit} className="flex items-center gap-2">
-                        <CheckCircle2 className="size-3.5 text-amber-500 shrink-0" />
-                        {benefit}
+                        <span className="text-sm leading-snug">{benefit}</span>
                       </li>
                     ))}
                   </ul>

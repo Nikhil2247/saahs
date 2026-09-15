@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
     }
 
-    // Update the profile
+    // Update the profile — auto-approve on successful payment
     const supabase = createSupabaseAdminClient();
     const { error } = await supabase
       .from("profiles")
@@ -50,7 +50,9 @@ export async function POST(req: NextRequest) {
         institution_name: institution_name ?? null,
         membership_payment_status: "paid",
         razorpay_payment_id,
-        role: "Outside Member",
+        // Auto-verify: assign SAAHS Member role & approve membership immediately
+        role: "SAAHS Member",
+        membership_status: "Approved",
         onboarding_complete: true,
         // Basic profile fields (avoids needing a Server Action call in the handler)
         ...(full_name    && { full_name: String(full_name).trim() }),

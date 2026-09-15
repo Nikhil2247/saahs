@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOut, getAuthenticatedUser } from "@/app/actions/auth";
+import { updateProfile } from "@/app/actions/profile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import {
   User,
   Mail,
@@ -19,7 +21,28 @@ import {
   CheckCircle2,
   Clock,
   XCircle,
+  Pencil,
+  X,
+  Save,
+  Loader2,
+  IdCard,
 } from "lucide-react";
+
+const COURSES = [
+  "Medical Laboratory Science (BMLS)",
+  "Medical Radiology & Imaging Technology",
+  "Radiotherapy Technology",
+  "Operation Theatre Technology",
+  "Medical Technology – Perfusionist",
+  "Embalming & Mortuary Science",
+  "Audiology & Speech-Language Pathology (BASLP)",
+  "Medical Technology – Dialysis Therapy",
+  "Optometry",
+  "Physiotherapy",
+  "Health Information Management",
+  "Public Health",
+  "Medical Animation & Audio-Visual Creation",
+];
 
 interface Profile {
   full_name: string | null;
@@ -32,24 +55,91 @@ interface Profile {
   membership_status: string | null;
   avatar_url: string | null;
   onboarding_complete: boolean | null;
+  institution: string | null;
+  is_pgimer_student: boolean | null;
 }
 
 export default function ProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+
+  const [form, setForm] = useState({
+    full_name: "",
+    phone_number: "",
+    course: "",
+    batch_year: "",
+    institution_name: "",
+  });
 
   useEffect(() => {
     async function load() {
       const { user, profile: profileData } = await getAuthenticatedUser();
       if (!user) { router.push("/login"); return; }
-
-      setProfile(profileData as Profile | null);
+      const p = profileData as Profile | null;
+      setProfile(p);
+      if (p) {
+        setForm({
+          full_name: p.full_name ?? "",
+          phone_number: p.phone_number ?? "",
+          course: p.course ?? "",
+          batch_year: p.batch_year ?? "",
+          institution_name: p.institution ?? "",
+        });
+      }
       setLoading(false);
     }
-
     load();
   }, [router]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError("");
+  };
+
+  const handleSave = () => {
+    setError("");
+    startTransition(async () => {
+      const result = await updateProfile(form);
+      if (!result.success) {
+        setError(result.error ?? "Failed to update profile.");
+        toast.error(result.error ?? "Failed to update profile.");
+      } else {
+        toast.success("Profile updated successfully!");
+        // refresh local state
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                full_name: form.full_name,
+                phone_number: form.phone_number,
+                course: form.course,
+                batch_year: form.batch_year,
+                institution: form.institution_name,
+              }
+            : prev
+        );
+        setEditing(false);
+      }
+    });
+  };
+
+  const handleCancelEdit = () => {
+    if (profile) {
+      setForm({
+        full_name: profile.full_name ?? "",
+        phone_number: profile.phone_number ?? "",
+        course: profile.course ?? "",
+        batch_year: profile.batch_year ?? "",
+        institution_name: profile.institution ?? "",
+      });
+    }
+    setError("");
+    setEditing(false);
+  };
 
   if (loading) {
     return (
@@ -87,17 +177,47 @@ export default function ProfilePage() {
 
   const badge = membershipBadge[profile.membership_status ?? "Pending"];
 
-  const fields = [
-    { label: "Email", value: profile.email, icon: Mail },
-    { label: "Phone", value: profile.phone_number, icon: Phone },
-    { label: "Department", value: profile.department, icon: Building2 },
-    { label: "Programme", value: profile.course, icon: GraduationCap },
-    { label: "Batch Year", value: profile.batch_year, icon: CalendarDays },
-  ];
-
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold text-foreground">My Profile</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+        {!editing ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setEditing(true)}
+          >
+            <Pencil className="size-4" />
+            Edit Profile
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleCancelEdit}
+              disabled={isPending}
+            >
+              <X className="size-4" />
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={handleSave}
+              disabled={isPending}
+            >
+              {isPending ? (
+                <><Loader2 className="size-4 animate-spin" /> Saving…</>
+              ) : (
+                <><Save className="size-4" /> Save Changes</>
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
 
       <Card className="border-border p-6">
         {/* Avatar + name + role */}
@@ -109,19 +229,30 @@ export default function ProfilePage() {
                 alt={profile.full_name ?? "Avatar"}
                 width={80}
                 height={80}
-                className="rounded-full object-cover"
+                className="rounded-full object-cover ring-2 ring-border"
               />
             ) : (
-              <div className="flex size-20 items-center justify-center rounded-full bg-primary/10">
+              <div className="flex size-20 items-center justify-center rounded-full bg-primary/10 ring-2 ring-border">
                 <User className="size-9 text-primary" />
               </div>
             )}
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-xl font-bold text-foreground">
-              {profile.full_name ?? "—"}
-            </h2>
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            {editing ? (
+              <input
+                name="full_name"
+                type="text"
+                value={form.full_name}
+                onChange={handleChange}
+                placeholder="Full Name"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xl font-bold text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            ) : (
+              <h2 className="text-xl font-bold text-foreground">
+                {profile.full_name ?? "—"}
+              </h2>
+            )}
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               {profile.role && (
                 <Badge variant="outline" className="gap-1 text-xs">
                   <Shield className="size-3" />
@@ -136,6 +267,12 @@ export default function ProfilePage() {
                   {badge.label}
                 </span>
               )}
+              {profile.is_pgimer_student && (
+                <Badge variant="outline" className="gap-1 text-xs border-primary/40 text-primary">
+                  <IdCard className="size-3" />
+                  PGIMER Student
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -143,19 +280,129 @@ export default function ProfilePage() {
         {/* Divider */}
         <div className="my-6 border-t border-border" />
 
+        {/* Error */}
+        {error && (
+          <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
         {/* Info grid */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {fields.map(({ label, value, icon: Icon }) => (
-            <div key={label}>
-              <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <Icon className="size-3.5" />
-                {label}
+        <div className="grid gap-5 sm:grid-cols-2">
+          {/* Email — always read-only (comes from Google) */}
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+              <Mail className="size-3.5" />
+              Email
+            </p>
+            <p className="text-sm font-medium text-foreground">
+              {profile.email ?? <span className="italic text-muted-foreground">Not set</span>}
+            </p>
+            {editing && (
+              <p className="mt-1 text-xs text-muted-foreground italic">Email is managed by Google and cannot be changed.</p>
+            )}
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1" htmlFor="phone_number">
+              <Phone className="size-3.5" />
+              Phone
+            </label>
+            {editing ? (
+              <input
+                id="phone_number"
+                name="phone_number"
+                type="tel"
+                value={form.phone_number}
+                onChange={handleChange}
+                placeholder="+91 98765 43210"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            ) : (
+              <p className="text-sm font-medium text-foreground">
+                {profile.phone_number ?? <span className="italic text-muted-foreground">Not set</span>}
               </p>
-              <p className="mt-0.5 text-sm font-medium text-foreground">
-                {value ?? <span className="text-muted-foreground italic">Not set</span>}
+            )}
+          </div>
+
+          {/* Course */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1" htmlFor="course">
+              <GraduationCap className="size-3.5" />
+              Programme / Course
+            </label>
+            {editing ? (
+              <select
+                id="course"
+                name="course"
+                value={form.course}
+                onChange={handleChange}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Select course…</option>
+                {COURSES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm font-medium text-foreground">
+                {profile.course ?? <span className="italic text-muted-foreground">Not set</span>}
               </p>
-            </div>
-          ))}
+            )}
+          </div>
+
+          {/* Batch Year */}
+          <div>
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1" htmlFor="batch_year">
+              <CalendarDays className="size-3.5" />
+              Batch Year
+            </label>
+            {editing ? (
+              <input
+                id="batch_year"
+                name="batch_year"
+                type="text"
+                maxLength={4}
+                value={form.batch_year}
+                onChange={handleChange}
+                placeholder="2023"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            ) : (
+              <p className="text-sm font-medium text-foreground">
+                {profile.batch_year ?? <span className="italic text-muted-foreground">Not set</span>}
+              </p>
+            )}
+          </div>
+
+          {/* Institution */}
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1" htmlFor="institution_name">
+              <Building2 className="size-3.5" />
+              Institution
+            </label>
+            {editing && !profile.is_pgimer_student ? (
+              <input
+                id="institution_name"
+                name="institution_name"
+                type="text"
+                value={form.institution_name}
+                onChange={handleChange}
+                placeholder="e.g. AIIMS Delhi, Manipal College of Health Professions"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            ) : (
+              <p className="text-sm font-medium text-foreground">
+                {profile.is_pgimer_student
+                  ? "PGIMER Chandigarh"
+                  : (profile.institution ?? <span className="italic text-muted-foreground">Not set</span>)}
+              </p>
+            )}
+            {editing && profile.is_pgimer_student && (
+              <p className="mt-1 text-xs text-muted-foreground italic">Institution is fixed for PGIMER students.</p>
+            )}
+          </div>
         </div>
 
         {/* Divider */}
@@ -169,7 +416,7 @@ export default function ProfilePage() {
               onClick={() => router.push("/onboarding")}
               className="flex-1"
             >
-              Complete Profile
+              Complete Profile Setup
             </Button>
           )}
           <Button

@@ -1,18 +1,23 @@
 import Link from "next/link"
-import { Megaphone, LogIn } from "lucide-react"
+import { Megaphone, LogIn, LayoutDashboard } from "lucide-react"
+import { getSession } from "@/lib/auth/session"
 import { createSupabaseServerClient } from "@/src/lib/supabase/server"
 
 export async function TopBanner() {
   const supabase = await createSupabaseServerClient();
-  const { data: notices } = await supabase
-    .from('notices')
-    .select('id, title, is_pinned')
-    .order('is_pinned', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(5);
+  const [{ data: notices }, session] = await Promise.all([
+    supabase
+      .from('notices')
+      .select('id, title, is_pinned')
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5),
+    getSession(),
+  ]);
 
   const rawItems = notices || [];
   const items = rawItems.length > 0 ? [...rawItems, ...rawItems] : [];
+  const isLoggedIn = !!session;
 
   return (
     <div className="w-full border-b border-primary/20 bg-primary text-primary-foreground">
@@ -40,13 +45,23 @@ export async function TopBanner() {
           </div>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary-foreground/10 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-primary-foreground/20"
-        >
-          <LogIn className="size-3.5" />
-          <span className="hidden xs:inline sm:inline">Portal Login</span>
-        </Link>
+        {isLoggedIn ? (
+          <Link
+            href="/dashboard"
+            className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary-foreground/10 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-primary-foreground/20"
+          >
+            <LayoutDashboard className="size-3.5" />
+            <span className="hidden xs:inline sm:inline">Dashboard</span>
+          </Link>
+        ) : (
+          <Link
+            href="/login"
+            className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary-foreground/10 px-2.5 py-1 text-xs font-medium transition-colors hover:bg-primary-foreground/20"
+          >
+            <LogIn className="size-3.5" />
+            <span className="hidden xs:inline sm:inline">Portal Login</span>
+          </Link>
+        )}
       </div>
     </div>
   )

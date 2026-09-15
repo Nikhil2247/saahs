@@ -2,20 +2,8 @@ import { createSupabaseServerClient } from "@/src/lib/supabase/server"
 import { Calendar, MapPin, Clock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
-const defaultUpcomingEvents = [
-  {
-    id: "teachers-day-2026",
-    title: "Teachers' Day Celebration",
-    category: "Cultural",
-    schedule: "2026-09-05T10:00:00+05:30",
-    venue: "NIAHS Auditorium, PGIMER Chandigarh",
-    banner_url: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&auto=format&fit=crop",
-    description: "Honoring the esteemed teachers and mentors of Allied Health Sciences.",
-  },
-]
-
 export async function UpcomingEvents() {
-  let dbEvents: any[] = []
+  let upcomingEvents: any[] = []
   let hasError = false
 
   try {
@@ -30,19 +18,11 @@ export async function UpcomingEvents() {
     if (error) {
       hasError = true
     } else if (data && data.length > 0) {
-      dbEvents = data
+      upcomingEvents = data
     }
   } catch {
     hasError = false
   }
-
-  // Ensure Teachers' Day event is always featured prominently if not already present
-  const hasTeachersDay = dbEvents.some((e) => 
-    e.title?.toLowerCase().includes("teacher")
-  )
-  const upcomingEvents = hasTeachersDay
-    ? dbEvents
-    : [...defaultUpcomingEvents, ...dbEvents].slice(0, 3)
 
   return (
     <section className="border-t border-border bg-card">
