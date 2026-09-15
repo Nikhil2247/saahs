@@ -22,6 +22,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import Script from "next/script";
+import { toast } from "sonner";
 
 const COURSES = [
   "Medical Laboratory Science (BMLS)",
@@ -82,12 +83,21 @@ export default function OnboardingPage() {
     try {
       const result = await uploadIdCardImage(file);
       if (!result.success || !result.data) {
-        throw new Error(result.error ?? "Failed to upload ID card.");
+        // Show a prominent toast error AND reset the file name
+        const msg = result.error ?? "Failed to upload ID card.";
+        toast.error(msg, { duration: 6000 });
+        setIdCardFileName("");
+        // Reset the file input so the user can re-select
+        e.target.value = "";
+        return;
       }
       setIdCardUrl(result.data.url);
+      toast.success("ID card uploaded successfully!");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload ID card.");
+      const msg = err instanceof Error ? err.message : "Failed to upload ID card.";
+      toast.error(msg, { duration: 6000 });
       setIdCardFileName("");
+      e.target.value = "";
     } finally {
       setIdCardUploading(false);
     }
@@ -362,15 +372,20 @@ export default function OnboardingPage() {
                       id="id_card"
                       name="id_card"
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/*"
                       required={!idCardUrl}
                       onChange={handleIdCardChange}
                       className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
                     <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                       {idCardUploading && <><Loader2 className="size-3 animate-spin" /> Uploading…</>}
-                      {!idCardUploading && idCardUrl && <><CheckCircle2 className="size-3 text-green-500" /> Uploaded {idCardFileName}</>}
-                      {!idCardUploading && !idCardUrl && "JPEG, PNG or WebP — used to verify your PGIMER enrolment."}
+                      {!idCardUploading && idCardUrl && <><CheckCircle2 className="size-3 text-green-500" /> Uploaded: {idCardFileName}</>}
+                      {!idCardUploading && !idCardUrl && (
+                        <>
+                          <AlertCircle className="size-3 shrink-0" />
+                          Any image format (JPG, PNG, HEIC, AVIF…) · Max size: <strong className="text-foreground">1 MB</strong>
+                        </>
+                      )}
                     </p>
                   </div>
                   <Button

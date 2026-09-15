@@ -100,12 +100,7 @@ export async function uploadToMinio(file: File, folder = 'uploads'): Promise<str
     metadata
   );
 
-  const endpoint = process.env.MINIO_ENDPOINT || '187.77.188.200';
-  const port = process.env.MINIO_PORT || '9000';
-  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-  
-  // If port is standard 80/443, omit it
-  const portSuffix = (port === '80' || port === '443') ? '' : `:${port}`;
-  
-  return `${protocol}://${endpoint}${portSuffix}/${BUCKET_NAME}/${uniqueName}`;
+  // Always serve files through the public CDN/proxy domain
+  const publicBase = process.env.MINIO_PUBLIC_URL || 'https://files.omnicassion.com';
+  return `${publicBase}/${BUCKET_NAME}/${uniqueName}`;
 }

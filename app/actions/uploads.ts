@@ -19,17 +19,25 @@ export async function uploadIdCardImage(file: File): Promise<ActionResult<{ url:
   }
 
   if (!file || file.size === 0) {
-    return { success: false, error: "No file provided." };
+    return { success: false, error: "No file selected. Please choose an image." };
   }
 
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-  if (!allowedTypes.includes(file.type)) {
-    return { success: false, error: "Only JPEG, PNG or WebP images are allowed." };
+  // Accept any image format
+  if (!file.type.startsWith("image/")) {
+    return {
+      success: false,
+      error: `"${file.name}" is not an image. Please upload a JPG, PNG, HEIC, or any other image format.`,
+    };
   }
 
-  const maxSize = 5 * 1024 * 1024;
-  if (file.size > maxSize) {
-    return { success: false, error: "File size must be less than 5MB." };
+  // 1 MB limit
+  const MAX_SIZE_BYTES = 1 * 1024 * 1024;
+  if (file.size > MAX_SIZE_BYTES) {
+    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      success: false,
+      error: `File is too large (${sizeMB} MB). Maximum allowed size is 1 MB. Please compress or resize the image and try again.`,
+    };
   }
 
   try {
@@ -37,6 +45,7 @@ export async function uploadIdCardImage(file: File): Promise<ActionResult<{ url:
     return { success: true, data: { url } };
   } catch (err) {
     console.error("[uploads/id_card] Upload failed:", err);
-    return { success: false, error: "Failed to upload ID card. Please try again." };
+    return { success: false, error: "Upload failed. Please check your connection and try again." };
   }
 }
+

@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import {
-  FolderOpen, FolderPlus, Plus, Trash, Download, ChevronRight,
-  ChevronLeft, BookOpen, Layers, GraduationCap, FileText,
+  FolderOpen, FolderPlus, Plus, Trash, ChevronRight,
+  ChevronLeft, BookOpen, Layers, GraduationCap, FileText, Eye,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -396,7 +396,7 @@ export function LibraryClient({
                     href={r.file_url} target="_blank" rel="noreferrer"
                     className="mt-3 flex items-center gap-1 text-xs text-primary hover:underline"
                   >
-                    <Download className="size-3" /> Download / View
+                    <Eye className="size-3" /> View
                   </a>
                 </div>
               ))}

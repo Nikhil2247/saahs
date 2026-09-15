@@ -73,30 +73,12 @@ export default async function ELibraryPage() {
     );
   }
 
-  // Fetch library resources
-  const { data: resources } = await supabase
-    .from('library_resources')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  // Map to the formats used by LibraryBrowser
-  const mappedResources = (resources || []).map((r: any) => {
-    let displayType = 'Notes';
-    if (r.category === 'Previous Year Papers') displayType = 'Previous Papers';
-    else if (r.category === 'SOPs') displayType = 'SOP';
-    else if (r.category === 'Guidelines' || r.category === 'Research Papers') displayType = 'Guideline';
-    
-    return {
-      id: r.id.toString(),
-      title: r.title,
-      type: displayType,
-      department: 'Coming Soon',
-      format: r.mime_type ? r.mime_type.split('/')[1]?.toUpperCase() || 'PDF' : 'PDF',
-      size: r.file_size_bytes ? `${(r.file_size_bytes / (1024 * 1024)).toFixed(1)} MB` : '1.2 MB',
-      updated: r.created_at,
-      file_url: r.file_url
-    };
-  });
+  // Fetch folders for the course→semester drill-down
+  const { data: folders } = await supabase
+    .from('lib_folders')
+    .select('id, name, course, semester, created_at')
+    .order('course', { ascending: true })
+    .order('semester', { ascending: true });
 
   return (
     <div>
@@ -106,7 +88,7 @@ export default async function ELibraryPage() {
         description="A curated collection of peer-reviewed study material, previous year papers, standard operating procedures and clinical guidelines."
       />
       <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-        <LibraryBrowser resources={mappedResources} />
+        <LibraryBrowser initialFolders={folders || []} />
       </div>
     </div>
   )

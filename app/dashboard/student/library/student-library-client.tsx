@@ -11,7 +11,7 @@ import {
   FolderOpen,
   Layers,
   GraduationCap,
-  Download,
+  Eye,
   Search,
   ChevronRight,
   FileText,
@@ -300,15 +300,15 @@ export function StudentLibraryClient({ initialFolders }: { initialFolders: Folde
                     </div>
                   </div>
 
+                  {/* View-only: no download attribute */}
                   <a
                     href={res.file_url}
                     target="_blank"
                     rel="noreferrer"
-                    download
                     className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline shrink-0 bg-primary/5 hover:bg-primary/10 px-2.5 py-1 rounded-md transition-colors"
                   >
-                    <Download className="size-3" />
-                    <span>Download</span>
+                    <Eye className="size-3" />
+                    <span>View</span>
                   </a>
                 </Card>
               ))}
