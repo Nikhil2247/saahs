@@ -25,7 +25,15 @@ export type UserRole =
   | "Treasurer"
   | "General Secretary"
   | "Vice President"
-  | "President";
+  | "President"
+  | "Faculty"
+  | "PGIMER Student"
+  | "Outside Member";
+
+export type NoticeSection =
+  | "General"
+  | "Letters & Minutes"
+  | "Documents";
 
 export type MembershipStatus = "Pending" | "Approved" | "Rejected";
 
@@ -76,11 +84,16 @@ export interface ProfileRow {
   batch_year: string | null;          // e.g. "2023"
   roll_number: string | null;
   institution: string | null;         // e.g. "PGIMER" — selected from public.institutions
-  id_card_url: string | null;         // Cloudinary delivery URL for the uploaded ID card
-  avatar_url: string | null;          // Cloudinary delivery URL
+  id_card_url: string | null;         // MinIO delivery URL for the uploaded ID card
+  avatar_url: string | null;          // MinIO delivery URL
   role: UserRole;
   membership_status: MembershipStatus;
   onboarding_complete: boolean;
+  // PGIMER vs outside member fields (migration 003)
+  is_pgimer_student: boolean | null;
+  institution_name: string | null;    // For non-PGIMER outside members
+  membership_payment_status: string | null; // pending | paid | failed
+  razorpay_payment_id: string | null; // Audit trail
   created_at: string;                 // ISO-8601
   updated_at: string;                 // ISO-8601
 }
@@ -101,6 +114,10 @@ export interface ProfileInsert {
   role?: UserRole;
   membership_status?: MembershipStatus;
   onboarding_complete?: boolean;
+  is_pgimer_student?: boolean | null;
+  institution_name?: string | null;
+  membership_payment_status?: string | null;
+  razorpay_payment_id?: string | null;
 }
 
 export type ProfileUpdate = Partial<ProfileInsert>;
@@ -128,7 +145,10 @@ export interface NoticeRow {
   title: string;
   content: string;
   category: NoticeCategory;
-  attachment_url: string | null;      // Cloudinary asset URL
+  section: NoticeSection;             // Which of the 3 sections this belongs to
+  attachment_url: string | null;      // Asset URL
+  image_url: string | null;           // For Letters & Minutes section
+  document_type: string | null;       // For Documents section (Constitution, Rules, Amendments)
   is_pinned: boolean;
   created_by: string;                 // UUID FK → profiles
   created_at: string;
@@ -138,7 +158,10 @@ export interface NoticeInsert {
   title: string;
   content: string;
   category?: NoticeCategory;
+  section?: NoticeSection;
   attachment_url?: string | null;
+  image_url?: string | null;
+  document_type?: string | null;
   is_pinned?: boolean;
   created_by: string;
 }
@@ -227,10 +250,13 @@ export interface LibraryResourceRow {
   id: number;
   title: string;
   category: LibraryCategory;
-  file_url: string;                   // Cloudinary delivery URL
+  file_url: string;                   // MinIO delivery URL
   file_size_bytes: number | null;
   mime_type: string | null;
   upload_by: string;                  // UUID FK → profiles
+  folder_id: number | null;           // FK → lib_folders
+  course: string | null;
+  semester: string | null;
   created_at: string;
 }
 
@@ -241,7 +267,30 @@ export interface LibraryResourceInsert {
   file_size_bytes?: number | null;
   mime_type?: string | null;
   upload_by: string;
+  folder_id?: number | null;
+  course?: string | null;
+  semester?: string | null;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface LibFolderRow {
+  id: number;
+  name: string;
+  course: string;
+  semester: string;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface LibFolderInsert {
+  name: string;
+  course: string;
+  semester: string;
+  created_by?: string | null;
+}
+
+export type LibFolderUpdate = Partial<LibFolderInsert>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -332,6 +381,12 @@ export interface Database {
         Update: Partial<LibraryResourceInsert>;
         Relationships: [];
       };
+      lib_folders: {
+        Row: LibFolderRow;
+        Insert: LibFolderInsert;
+        Update: LibFolderUpdate;
+        Relationships: [];
+      };
       meetings: {
         Row: MeetingRow;
         Insert: MeetingInsert;
@@ -347,6 +402,7 @@ export interface Database {
       membership_status: MembershipStatus;
       grievance_status: GrievanceStatus;
       notice_category: NoticeCategory;
+      notice_section: NoticeSection;
       event_category: EventCategory;
       library_category: LibraryCategory;
     };

@@ -36,6 +36,7 @@ export default async function DashboardLayout({
     name: profile?.full_name ?? profile?.email ?? "User",
     email: profile?.email ?? "",
     avatarUrl: profile?.avatar_url ?? null,
+    role: profile?.role,
   };
 
   return (
@@ -43,9 +44,9 @@ export default async function DashboardLayout({
       <DashboardSidebar isAdmin={isAdmin} />
 
       <div className="flex flex-1 flex-col lg:pl-64">
-        <DashboardTopbar user={topbarUser} />
+        <DashboardTopbar user={topbarUser} isAdmin={isAdmin} />
 
-        <main className="flex-1 overflow-y-auto bg-muted/20">
+        <main className="flex-1 overflow-y-auto bg-muted/15 scrollbar-thin">
           {children}
         </main>
       </div>

@@ -116,49 +116,51 @@ export function EventsClient({
           <h2 className="text-2xl font-bold tracking-tight">Events Management</h2>
           <p className="text-muted-foreground">Create and manage upcoming events and activities.</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="bg-brand text-brand-foreground hover:bg-brand/90">
-          <Plus className="mr-2 h-4 w-4" /> Add Event
+        <Button size="sm" onClick={() => setIsCreateOpen(true)} className="h-8 text-xs font-medium">
+          <Plus className="mr-1.5 size-3.5" /> Add Event
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Start Time</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="text-xs font-semibold py-2.5">Title</TableHead>
+              <TableHead className="text-xs font-semibold py-2.5">Type</TableHead>
+              <TableHead className="text-xs font-semibold py-2.5">Start Time</TableHead>
+              <TableHead className="text-xs font-semibold py-2.5">Location</TableHead>
+              <TableHead className="text-xs font-semibold py-2.5 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {events.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-28 text-center text-xs text-muted-foreground">
                   No events found.
                 </TableCell>
               </TableRow>
             ) : (
               events.map((event) => (
-                <TableRow key={event.id}>
-                  <TableCell className="font-medium max-w-[200px] truncate">{event.title}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{event.event_type}</Badge>
+                <TableRow key={event.id} className="hover:bg-muted/30">
+                  <TableCell className="font-medium max-w-[200px] truncate py-2.5 text-xs">{event.title}</TableCell>
+                  <TableCell className="py-2.5">
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{event.event_type}</Badge>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap">
+                  <TableCell className="whitespace-nowrap py-2.5 text-xs text-muted-foreground">
                     {new Date(event.start_time).toLocaleString(undefined, {
                       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     })}
                   </TableCell>
-                  <TableCell className="truncate max-w-[150px]">{event.location}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="truncate max-w-[150px] py-2.5 text-xs">{event.location}</TableCell>
+                  <TableCell className="text-right py-2.5">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="ghost" className="h-7 w-7 p-0">
+                            <MoreHorizontal className="size-3.5" />
+                          </Button>
+                        }
+                      />
                       <DropdownMenuContent align="end">
                         <DropdownMenuGroup>
                           <DropdownMenuItem onClick={() => setEditingEvent(event)}>

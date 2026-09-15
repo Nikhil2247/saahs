@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
-import { LibraryClient, LibraryDB } from "./library-client"
+import { LibraryClient } from "./library-client"
 
 export const dynamic = 'force-dynamic';
 
@@ -10,15 +10,16 @@ export default async function AdminLibraryPage({
 }) {
   const { page: pageStr } = await searchParams;
   const page = parseInt(pageStr || '1', 10);
-  const limit = 10;
+  const limit = 20;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   const supabase = createSupabaseAdminClient();
-  
+
+  // Fetch resources (passed as initial data; the client also fetches folder-specific resources on demand)
   const { data: resources, count, error } = await supabase
     .from('library_resources')
-    .select('*', { count: 'exact' })
+    .select('id, title, category, file_url, file_size_bytes, mime_type, folder_id, course, semester, created_at', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -28,22 +29,12 @@ export default async function AdminLibraryPage({
     return <div className="text-red-500 p-6">Failed to load library resources. Error: {error.message}</div>
   }
 
-  const mappedResources: LibraryDB[] = (resources || []).map((r: any) => ({
-    id: r.id.toString(),
-    title: r.title,
-    resource_type: r.category === 'Books' ? 'E-Book' : r.category === 'Previous Year Papers' ? 'Past Paper' : r.category === 'Presentations' ? 'Presentation' : r.category,
-    department: null,
-    subject: null,
-    file_url: r.file_url,
-    created_at: r.created_at,
-  }));
-
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-      <LibraryClient 
-        resources={mappedResources} 
-        page={page} 
-        totalPages={totalPages} 
+    <div className="dashboard-container">
+      <LibraryClient
+        resources={(resources || []) as any[]}
+        page={page}
+        totalPages={totalPages}
       />
     </div>
   )

@@ -11,7 +11,7 @@ export default async function AdminInstitutionsPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-4xl mx-auto">
+    <div className="dashboard-container max-w-4xl">
       <InstitutionsClient institutions={result.data ?? []} />
     </div>
   );

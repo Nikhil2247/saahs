@@ -141,11 +141,13 @@ export function GrievancesClient({
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="ghost" className="h-7 w-7 p-0">
+                            <MoreHorizontal className="size-3.5" />
+                          </Button>
+                        }
+                      />
                       <DropdownMenuContent align="end">
                         <DropdownMenuGroup>
                           <DropdownMenuItem onClick={() => setViewingGrievance(g)}>

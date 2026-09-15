@@ -91,12 +91,12 @@ export function InstitutionsClient({ institutions }: { institutions: Institution
             Manage the institutions offered on the onboarding form.
           </p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="bg-brand text-brand-foreground hover:bg-brand/90">
-          <Plus className="mr-2 h-4 w-4" /> Add Institution
+        <Button size="sm" onClick={() => setIsCreateOpen(true)} className="h-8 text-xs font-medium">
+          <Plus className="mr-1.5 size-3.5" /> Add Institution
         </Button>
       </div>
 
-      <div className="rounded-md border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
         <Table>
           <TableHeader>
             <TableRow>

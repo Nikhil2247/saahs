@@ -49,6 +49,7 @@ export async function submitGrievance(formData: FormData) {
   }
 
   revalidatePath("/dashboard/admin/grievances");
+  revalidatePath("/dashboard/student/grievances");
   revalidatePath("/help-desk");
 
   return { success: true, ticket_number };

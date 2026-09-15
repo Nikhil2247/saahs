@@ -1,0 +1,11 @@
+-- =============================================================================
+-- SAAHS — Migration 003 (SUPERSEDED)
+-- =============================================================================
+-- This file has been split into two parts due to a PostgreSQL constraint:
+-- ALTER TYPE ... ADD VALUE cannot be used in the same transaction as code
+-- that references the new enum values (error 55P04).
+--
+-- ✅ Please run these two files IN ORDER instead:
+--   1. supabase/migrations/003a_new_roles.sql       ← Run this first, wait for success
+--   2. supabase/migrations/003b_notices_library.sql  ← Then run this
+-- =============================================================================

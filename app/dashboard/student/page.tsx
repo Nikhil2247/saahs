@@ -1,11 +1,7 @@
 /**
  * app/dashboard/student/page.tsx
  *
- * Student Dashboard — shown to authenticated users with role SAAHS Member
- * (or Public User during the pending membership period).
- *
- * Reads the real Supabase session server-side and passes profile data
- * down as props.
+ * Student / Member Dashboard Overview — high density, modern UI.
  */
 
 import { redirect } from "next/navigation";
@@ -15,45 +11,45 @@ import Link from "next/link";
 import {
   Bell,
   Calendar,
-  FileText,
-  Users,
-  ArrowRight,
-  Clock,
-  GraduationCap,
+  ClipboardList,
   BookOpen,
+  ArrowRight,
+  GraduationCap,
+  Building,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 
 export default async function StudentDashboardPage() {
   const session = await getSession();
-  if (!session) redirect("/");
+  if (!session) redirect("/login");
 
   const supabase = createSupabaseAdminClient();
 
   // Fetch profile
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email, department, course, batch_year, role, membership_status, avatar_url")
+    .select("full_name, email, department, course, batch_year, role, membership_status, avatar_url, is_pgimer_student, institution_name, membership_payment_status")
     .eq("id", session.userId)
     .single();
 
   if (!profile?.full_name) redirect("/onboarding");
 
-  // Fetch latest 5 notices
+  // Fetch latest 4 notices
   const { data: notices } = await supabase
     .from("notices")
-    .select("id, title, category, is_pinned, created_at")
+    .select("id, title, category, section, is_pinned, created_at")
     .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false })
-    .limit(5);
+    .limit(4);
 
-  // Fetch upcoming events
+  // Fetch upcoming 4 events
   const { data: events } = await supabase
     .from("events")
     .select("id, title, category, schedule, venue")
@@ -65,190 +61,221 @@ export default async function StudentDashboardPage() {
   // Fetch user's own grievances
   const { data: myTickets } = await supabase
     .from("grievances")
-    .select("ticket_number, title, status, created_at")
+    .select("id, ticket_number, title, status, created_at")
     .eq("user_id", session.userId)
-    .eq("is_anonymous", false)
     .order("created_at", { ascending: false })
     .limit(3);
 
   const statusColor: Record<string, string> = {
-    Submitted: "bg-blue-500/10 text-blue-600",
-    "Under Review": "bg-yellow-500/10 text-yellow-600",
-    "In Progress": "bg-purple-500/10 text-purple-600",
-    Resolved: "bg-green-500/10 text-green-600",
-    Closed: "bg-gray-500/10 text-gray-600",
-  };
-
-  const membershipColor: Record<string, string> = {
-    Pending: "bg-yellow-500/10 text-yellow-600",
-    Approved: "bg-green-500/10 text-green-600",
-    Rejected: "bg-red-500/10 text-red-600",
+    Submitted: "bg-blue-500/10 text-blue-700 border-blue-200",
+    "Under Review": "bg-amber-500/10 text-amber-700 border-amber-200",
+    "In Progress": "bg-purple-500/10 text-purple-700 border-purple-200",
+    Resolved: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
+    Closed: "bg-gray-500/10 text-gray-700 border-gray-200",
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      {/* ── Welcome header ── */}
-      <div className="mb-8 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+    <div className="dashboard-container space-y-5">
+      {/* Student Welcome & Profile Strip */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/70 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Welcome back, {profile.full_name?.split(" ")[0]} 👋
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">Student Member Portal</span>
+            {profile.is_pgimer_student ? (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-500/10 text-blue-700 border-blue-200">
+                PGIMER Scholar
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-purple-500/10 text-purple-700 border-purple-200">
+                {profile.institution_name || "Outside Member"}
+              </Badge>
+            )}
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl mt-0.5">
+            Welcome, {profile.full_name?.split(" ")[0]} 👋
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {profile.department} · {profile.course} · Batch {profile.batch_year}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {profile.course || profile.department || "Allied Health Sciences"} {profile.batch_year ? `· Batch ${profile.batch_year}` : ""}
           </p>
         </div>
+
         <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-              membershipColor[profile.membership_status] ?? "bg-secondary text-foreground"
+          <Badge
+            variant="outline"
+            className={`text-xs px-2.5 py-1 font-semibold ${
+              profile.membership_status === "Approved"
+                ? "bg-emerald-500/10 text-emerald-700 border-emerald-300"
+                : profile.membership_status === "Rejected"
+                ? "bg-rose-500/10 text-rose-700 border-rose-300"
+                : "bg-amber-500/10 text-amber-700 border-amber-300"
             }`}
           >
-            {profile.membership_status === "Pending"
-              ? "Membership Pending"
-              : profile.membership_status === "Approved"
-              ? "SAAHS Member ✓"
-              : "Membership Rejected"}
-          </span>
+            {profile.membership_status === "Approved"
+              ? "Verified Member ✓"
+              : profile.membership_status === "Rejected"
+              ? "Application Rejected"
+              : "Verification Pending"}
+          </Badge>
+          <Button variant="outline" size="sm" render={<Link href="/profile" className="text-xs font-medium" />}>
+            My Profile
+          </Button>
         </div>
       </div>
 
-      {/* ── Stat cards ── */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "My Notices", value: notices?.length ?? 0, icon: Bell, href: "/notices" },
-          { label: "Upcoming Events", value: events?.length ?? 0, icon: Calendar, href: "/notices" },
-          { label: "My Tickets", value: myTickets?.length ?? 0, icon: FileText, href: "/help-desk" },
-          { label: "Department", value: profile.department?.split(" ")[0] ?? "—", icon: GraduationCap, href: "/departments" },
-        ].map(({ label, value, icon: Icon, href }) => (
-          <Link key={label} href={href}>
-            <Card className="flex items-center gap-4 border-border p-5 transition-colors hover:border-primary/40 hover:bg-secondary/30">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
-                <Icon className="size-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="text-xl font-bold text-foreground">{value}</p>
-              </div>
-            </Card>
-          </Link>
-        ))}
+      {/* Quick Action Cards Grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Link href="/dashboard/student/notices">
+          <Card className="p-3.5 border-border shadow-2xs hover:border-primary/40 hover:bg-secondary/25 transition-all">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 mb-2">
+              <Bell className="size-4" />
+            </div>
+            <p className="text-xs font-semibold text-foreground">Notices & Circulars</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Announcements & docs</p>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/student/events">
+          <Card className="p-3.5 border-border shadow-2xs hover:border-primary/40 hover:bg-secondary/25 transition-all">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 mb-2">
+              <Calendar className="size-4" />
+            </div>
+            <p className="text-xs font-semibold text-foreground">Events & Workshops</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Register for sessions</p>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/student/library">
+          <Card className="p-3.5 border-border shadow-2xs hover:border-primary/40 hover:bg-secondary/25 transition-all">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 mb-2">
+              <BookOpen className="size-4" />
+            </div>
+            <p className="text-xs font-semibold text-foreground">E-Library & Notes</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Curated study material</p>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/student/grievances">
+          <Card className="p-3.5 border-border shadow-2xs hover:border-primary/40 hover:bg-secondary/25 transition-all">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 mb-2">
+              <ClipboardList className="size-4" />
+            </div>
+            <p className="text-xs font-semibold text-foreground">Grievances & Help</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Track submitted queries</p>
+          </Card>
+        </Link>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* ── Latest Notices ── */}
-        <Card className="border-border">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <h2 className="font-semibold text-foreground flex items-center gap-2">
-              <Bell className="size-4" /> Latest Notices
-            </h2>
-            <Link href="/notices" className="text-xs text-primary hover:underline flex items-center gap-1">
-              View all <ArrowRight className="size-3" />
-            </Link>
-          </div>
-          <div className="divide-y divide-border">
+      {/* 2-Column: Latest Notices & Upcoming Events */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Latest Notices Card */}
+        <Card className="border-border shadow-2xs">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/70 px-4 py-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Bell className="size-4 text-primary" />
+              <span>Latest Notices & Announcements</span>
+            </CardTitle>
+            <Button variant="ghost" size="sm" render={<Link href="/dashboard/student/notices" className="text-xs text-primary font-medium" />}>
+              View all <ArrowRight className="ml-1 size-3" />
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-border/60">
             {notices && notices.length > 0 ? (
               notices.map((n) => (
-                <div key={n.id} className="px-6 py-3.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-foreground line-clamp-1">{n.title}</p>
-                    {n.is_pinned && (
-                      <Badge className="shrink-0 text-[10px]">Pinned</Badge>
-                    )}
+                <Link
+                  key={n.id}
+                  href="/dashboard/student/notices"
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{n.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {n.category} · {new Date(n.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">{n.category}</Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="size-3" />
-                      {new Date(n.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
-                    </span>
-                  </div>
-                </div>
+                  {n.is_pinned && (
+                    <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5 py-0 bg-amber-500/10 text-amber-700">
+                      Pinned
+                    </Badge>
+                  )}
+                </Link>
               ))
             ) : (
-              <p className="px-6 py-8 text-center text-sm text-muted-foreground">No notices yet.</p>
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No active notices available at this moment.
+              </div>
             )}
-          </div>
+          </CardContent>
         </Card>
 
-        {/* ── Upcoming Events ── */}
-        <Card className="border-border">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <h2 className="font-semibold text-foreground flex items-center gap-2">
-              <Calendar className="size-4" /> Upcoming Events
-            </h2>
-          </div>
-          <div className="divide-y divide-border">
+        {/* Upcoming Events Card */}
+        <Card className="border-border shadow-2xs">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/70 px-4 py-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Calendar className="size-4 text-primary" />
+              <span>Upcoming SAAHS Events</span>
+            </CardTitle>
+            <Button variant="ghost" size="sm" render={<Link href="/dashboard/student/events" className="text-xs text-primary font-medium" />}>
+              Explore <ArrowRight className="ml-1 size-3" />
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-border/60">
             {events && events.length > 0 ? (
-              events.map((ev) => (
-                <div key={ev.id} className="px-6 py-3.5">
-                  <p className="text-sm font-medium text-foreground line-clamp-1">{ev.title}</p>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>{new Date(ev.schedule).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                    <span>·</span>
-                    <span>{ev.venue}</span>
+              events.map((e) => (
+                <Link
+                  key={e.id}
+                  href="/dashboard/student/events"
+                  className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{e.title}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {new Date(e.schedule).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })} · {e.venue}
+                    </p>
                   </div>
-                </div>
+                  <Badge variant="outline" className="shrink-0 text-[10px] px-1.5 py-0">
+                    {e.category}
+                  </Badge>
+                </Link>
               ))
             ) : (
-              <p className="px-6 py-8 text-center text-sm text-muted-foreground">No upcoming events.</p>
+              <div className="py-8 text-center text-xs text-muted-foreground">
+                No upcoming events scheduled right now.
+              </div>
             )}
-          </div>
-        </Card>
-
-        {/* ── My Grievance Tickets ── */}
-        <Card className="border-border lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <h2 className="font-semibold text-foreground flex items-center gap-2">
-              <FileText className="size-4" /> My Help Desk Tickets
-            </h2>
-            <Link href="/help-desk" className="text-xs text-primary hover:underline flex items-center gap-1">
-              Raise ticket <ArrowRight className="size-3" />
-            </Link>
-          </div>
-          {myTickets && myTickets.length > 0 ? (
-            <div className="divide-y divide-border">
-              {myTickets.map((t) => (
-                <div key={t.ticket_number} className="flex items-center justify-between gap-4 px-6 py-3.5">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{t.title}</p>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{t.ticket_number}</p>
-                  </div>
-                  <span
-                    className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      statusColor[t.status] ?? "bg-secondary text-foreground"
-                    }`}
-                  >
-                    {t.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="px-6 py-8 text-center text-sm text-muted-foreground">
-              No tickets raised yet.{" "}
-              <Link href="/help-desk" className="text-primary hover:underline">
-                Submit a grievance
-              </Link>
-            </p>
-          )}
+          </CardContent>
         </Card>
       </div>
 
-      {/* ── Membership CTA ── */}
-      {profile.membership_status === "Pending" && (
-        <Card className="mt-6 flex flex-col items-center gap-3 border-border bg-secondary/30 p-6 text-center sm:flex-row sm:text-left">
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10">
-            <Users className="size-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-foreground">Membership Under Review</p>
-            <p className="text-sm text-muted-foreground">
-              Your SAAHS membership application is being reviewed. You&apos;ll gain full access once approved.
-            </p>
-          </div>
-          <Link href="/help-desk">
-            <Button variant="outline" size="sm">Track status</Button>
-          </Link>
+      {/* Grievance Ticket Tracker for this student */}
+      {myTickets && myTickets.length > 0 && (
+        <Card className="border-border shadow-2xs">
+          <CardHeader className="flex flex-row items-center justify-between border-b border-border/70 px-4 py-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <ClipboardList className="size-4 text-primary" />
+              <span>My Grievance Tickets</span>
+            </CardTitle>
+            <Button variant="ghost" size="sm" render={<Link href="/dashboard/student/grievances" className="text-xs text-primary font-medium" />}>
+              Track all <ArrowRight className="ml-1 size-3" />
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-border/60">
+            {myTickets.map((t) => (
+              <div key={t.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>
+                  <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{t.ticket_number}</p>
+                </div>
+                <Badge variant="outline" className={`shrink-0 text-[10px] px-2 py-0.5 ${statusColor[t.status] ?? ""}`}>
+                  {t.status}
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
         </Card>
       )}
     </div>

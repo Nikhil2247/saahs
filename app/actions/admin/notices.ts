@@ -3,7 +3,10 @@
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
 import { getSession } from "@/lib/auth/session"
 import { revalidatePath } from "next/cache"
-import type { NoticeCategory } from "@/types/database"
+import { uploadToMinio } from "@/src/lib/minio"
+import type { NoticeCategory, NoticeSection } from "@/types/database"
+
+// ─── General Notices ──────────────────────────────────────────────────────────
 
 export async function createNotice(formData: FormData) {
   const session = await getSession();
@@ -11,18 +14,36 @@ export async function createNotice(formData: FormData) {
 
   const supabase = createSupabaseAdminClient();
 
-  const title = formData.get("title") as string;
-  const content = formData.get("content") as string;
+  const title    = formData.get("title") as string;
+  const content  = formData.get("content") as string;
   const category = formData.get("category") as string;
+  const section  = (formData.get("section") as NoticeSection) || "General";
   const is_pinned = formData.get("is_pinned") === "true";
+
+  // Handle image upload for Letters & Minutes section
+  let image_url: string | null = null;
+  const imageFile = formData.get("image_file") as File | null;
+  if (imageFile && imageFile.size > 0) {
+    try {
+      image_url = await uploadToMinio(imageFile, "notices");
+    } catch (err: any) {
+      return { success: false, error: `Image upload failed: ${err.message}` };
+    }
+  }
+
+  // Handle document_type for Documents section
+  const document_type = formData.get("document_type") as string | null;
 
   const { error } = await supabase.from("notices").insert({
     title,
-    content,
-    category: category as NoticeCategory,
+    content: content || "",
+    category: (category as NoticeCategory) || "General",
+    section,
     is_pinned,
+    image_url,
+    document_type: document_type || null,
     created_by: session.userId,
-  });
+  } as any);
 
   if (error) return { success: false, error: error.message };
 
@@ -38,17 +59,33 @@ export async function updateNotice(id: string, formData: FormData) {
 
   const supabase = createSupabaseAdminClient();
 
-  const title = formData.get("title") as string;
-  const content = formData.get("content") as string;
+  const title    = formData.get("title") as string;
+  const content  = formData.get("content") as string;
   const category = formData.get("category") as string;
+  const section  = (formData.get("section") as NoticeSection) || "General";
   const is_pinned = formData.get("is_pinned") === "true";
+  const document_type = formData.get("document_type") as string | null;
+
+  // Handle image upload for Letters & Minutes section
+  let image_url: string | null = (formData.get("existing_image_url") as string) || null;
+  const imageFile = formData.get("image_file") as File | null;
+  if (imageFile && imageFile.size > 0) {
+    try {
+      image_url = await uploadToMinio(imageFile, "notices");
+    } catch (err: any) {
+      return { success: false, error: `Image upload failed: ${err.message}` };
+    }
+  }
 
   const { error } = await supabase.from("notices").update({
     title,
-    content,
+    content: content || "",
     category: category as NoticeCategory,
+    section,
     is_pinned,
-  }).eq("id", id);
+    image_url,
+    document_type: document_type || null,
+  } as any).eq("id", id);
 
   if (error) return { success: false, error: error.message };
 

@@ -429,7 +429,7 @@ export const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
   { label: "Leadership", href: "/leadership" },
-  { label: "Departments", href: "/departments" },
+  { label: "Courses", href: "/departments" },
   { label: "E-Library", href: "/e-library" },
   { label: "Help Desk", href: "/help-desk" },
   { label: "Notices", href: "/notices" },

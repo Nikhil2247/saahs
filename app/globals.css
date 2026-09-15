@@ -123,6 +123,39 @@
   scrollbar-width: none;
 }
 
+/* ── Thin dashboard scrollbars ────────────────────────────────────────────── */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.85 0.01 250) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: oklch(0.85 0.01 250);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0.02 250);
+}
+
+/* ── High-density dashboard container ─────────────────────────────────────── */
+.dashboard-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem 1.25rem 2rem 1.25rem;
+}
+@media (min-width: 768px) {
+  .dashboard-container {
+    padding: 1.25rem 1.75rem 2.5rem 1.75rem;
+  }
+}
+
 /* ── Curved underline on headings ─────────────────────────────────────────── */
 .heading-underline {
   position: relative;

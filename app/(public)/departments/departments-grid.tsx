@@ -28,14 +28,14 @@ export function DepartmentsGrid() {
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search departments or coordinators..."
+          placeholder="Search courses or disciplines…"
           className="pl-9"
-          aria-label="Search departments"
+          aria-label="Search courses"
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">No departments match your search.</p>
+        <p className="py-12 text-center text-muted-foreground">No courses match your search.</p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => (

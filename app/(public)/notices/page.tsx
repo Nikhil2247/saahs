@@ -7,7 +7,7 @@ export default async function NoticesPage() {
   const supabase = await createSupabaseServerClient();
   const { data: notices, error } = await supabase
     .from('notices')
-    .select('*')
+    .select('id, title, content, category, section, is_pinned, image_url, document_type, created_at')
     .order('created_at', { ascending: false });
 
   return (

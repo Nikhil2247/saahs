@@ -29,7 +29,7 @@ export default async function AdminGrievancesPage({
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="dashboard-container">
       <GrievancesClient 
         grievances={(grievances as GrievanceDB[]) || []} 
         page={page} 

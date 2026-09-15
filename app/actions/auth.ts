@@ -28,11 +28,10 @@ import { resolveSiteUrl } from "@/lib/site-url";
 export interface OnboardingFormData {
   full_name: string;
   phone_number: string;
-  department: string;
-  course: string;
+  course: string;          // The student's course/discipline (formerly 'department')
   batch_year: string;
-  institution: string;
-  id_card_url: string;
+  is_pgimer_student: boolean;
+  id_card_url: string;     // Required only for PGIMER students
 }
 
 export interface ActionResult<T = void> {
@@ -51,15 +50,12 @@ function validateOnboarding(data: OnboardingFormData): string | null {
     return "Full name must be at least 2 characters.";
   if (!PHONE_REGEX.test(data.phone_number))
     return "Please enter a valid phone number (7–15 digits).";
-  if (!data.department?.trim() || data.department.trim().length < 2)
-    return "Department is required.";
   if (!data.course?.trim() || data.course.trim().length < 2)
-    return "Course / programme is required.";
+    return "Course / discipline is required.";
   if (!BATCH_YEAR_REGEX.test(data.batch_year))
     return "Batch year must be a 4-digit year, e.g. 2023.";
-  if (!data.institution?.trim())
-    return "Institution is required.";
-  if (!data.id_card_url?.trim())
+  // ID card is only mandatory for PGIMER students
+  if (data.is_pgimer_student && !data.id_card_url?.trim())
     return "Please upload a photo of your ID card.";
   return null;
 }
@@ -116,13 +112,15 @@ export async function completeOnboarding(
     .update({
       full_name:           formData.full_name.trim(),
       phone_number:        formData.phone_number.trim(),
-      department:          formData.department.trim(),
       course:              formData.course.trim(),
       batch_year:          formData.batch_year.trim(),
-      institution:         formData.institution.trim(),
-      id_card_url:         formData.id_card_url.trim(),
-      onboarding_complete: true,
-    })
+      institution:         formData.is_pgimer_student ? "PGIMER" : null,
+      id_card_url:         formData.id_card_url?.trim() || null,
+      is_pgimer_student:   formData.is_pgimer_student,
+      // PGIMER students get PGIMER Student role; outside members handled by Razorpay verify route
+      role:                formData.is_pgimer_student ? "PGIMER Student" : undefined,
+      onboarding_complete: formData.is_pgimer_student ? true : false,
+    } as any)
     .eq("id", session.userId);
 
   if (updateError) {
@@ -151,5 +149,6 @@ export async function getAuthenticatedUser() {
 
   if (!profile) return { user: null, profile: null };
 
-  return { user: { id: profile.id, email: profile.email }, profile };
+  const p = profile as any;
+  return { user: { id: p.id, email: p.email }, profile };
 }

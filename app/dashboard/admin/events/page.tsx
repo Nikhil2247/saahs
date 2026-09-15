@@ -41,7 +41,7 @@ export default async function AdminEventsPage({
   }));
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="dashboard-container">
       <EventsClient 
         events={mappedEvents} 
         page={page} 

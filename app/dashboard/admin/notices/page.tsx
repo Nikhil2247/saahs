@@ -18,7 +18,7 @@ export default async function AdminNoticesPage({
   
   const { data: notices, count, error } = await supabase
     .from('notices')
-    .select('*', { count: 'exact' })
+    .select('id, title, content, category, section, is_pinned, image_url, document_type, created_at', { count: 'exact' })
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -30,7 +30,7 @@ export default async function AdminNoticesPage({
   }
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="dashboard-container">
       <NoticesClient 
         notices={(notices as NoticeDB[]) || []} 
         page={page} 
