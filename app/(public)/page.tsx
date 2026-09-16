@@ -6,11 +6,17 @@ import { PresidentMessage } from "@/components/home/president-message"
 import { NoticesFeed } from "@/components/home/notices-feed"
 import { UpcomingEvents } from "@/components/home/upcoming-events"
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
+import { getSession } from "@/lib/auth/session"
 
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const supabase = createSupabaseAdminClient()
+  const [session, supabase] = await Promise.all([
+    getSession(),
+    Promise.resolve(createSupabaseAdminClient()),
+  ])
+  const isLoggedIn = !!session
+
   const { count: activeMemberCount } = await supabase
     .from("profiles")
     .select("*", { count: "exact", head: true })
@@ -18,7 +24,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Hero />
+      <Hero isLoggedIn={isLoggedIn} />
       <StatsGrid activeMemberCount={activeMemberCount ?? 0} />
 
       <section className="mx-auto max-w-7xl px-4 pb-14">
@@ -42,10 +48,10 @@ export default async function HomePage() {
               welfare support and a network of allied health peers.
             </p>
             <Link
-              href="/dashboard"
+              href={isLoggedIn ? "/dashboard" : "/login"}
               className="relative z-10 inline-flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brand/90 hover:shadow-lg hover:shadow-brand/20"
             >
-              Join SAAHS Today
+              {isLoggedIn ? "Go to Dashboard" : "Join SAAHS Today"}
               <ArrowRight className="size-4" />
             </Link>
           </div>

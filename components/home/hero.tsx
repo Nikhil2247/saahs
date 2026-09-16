@@ -2,7 +2,11 @@ import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Compass, ShieldCheck } from "lucide-react"
 
-export function Hero() {
+interface HeroProps {
+  isLoggedIn?: boolean
+}
+
+export function Hero({ isLoggedIn = false }: HeroProps) {
   return (
     <section className="relative overflow-hidden border-b border-border bg-background text-foreground">
       {/* ── SAAHS watermark text in background ──────────────────────────── */}
@@ -54,10 +58,10 @@ export function Hero() {
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link
-              href="/dashboard"
+              href={isLoggedIn ? "/dashboard" : "/login"}
               className="inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-brand-foreground transition-all hover:bg-brand/90 hover:shadow-lg hover:shadow-brand/30"
             >
-              Join SAAHS
+              {isLoggedIn ? "Go to Dashboard" : "Join SAAHS"}
               <ArrowRight className="size-4" />
             </Link>
             <Link
