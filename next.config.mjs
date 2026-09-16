@@ -4,6 +4,16 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverActions: {
+      // Server Action request bodies (multipart file uploads) default to a 1 MB
+      // cap in Next.js — the same as our own ID-card size limit, so a file just
+      // under our limit could still be rejected at the transport layer before
+      // our friendly validation in app/actions/uploads.ts ever runs. Raise the
+      // transport cap so our own size check is always the one that fires.
+      bodySizeLimit: "4mb",
+    },
+  },
   images: {
     remotePatterns: [
       // Google OAuth profile pictures

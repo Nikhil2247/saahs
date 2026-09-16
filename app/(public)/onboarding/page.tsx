@@ -74,10 +74,38 @@ export default function OnboardingPage() {
     setError("");
   };
 
+  const MAX_ID_CARD_SIZE_BYTES = 1 * 1024 * 1024;
+  const IMAGE_EXTENSION_RE =
+    /\.(jpe?g|jfif|pjpeg|pjp|png|gif|webp|bmp|heic|heif|avif|tiff?|svg|ico)$/i;
+
   const handleIdCardChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setError("");
+
+    // Validate on the client first so obviously-invalid files are rejected
+    // instantly, with a clear message, instead of round-tripping to the
+    // server (or silently hitting a transport-level size cap).
+    const looksLikeImage =
+      file.type.startsWith("image/") ||
+      ((file.type === "" || file.type === "application/octet-stream") &&
+        IMAGE_EXTENSION_RE.test(file.name));
+    if (!looksLikeImage) {
+      const msg = `"${file.name}" is not a supported image. Please upload a JPG, JPEG, PNG, GIF, WEBP, BMP, HEIC, HEIF, AVIF, TIFF, or SVG file.`;
+      setError(msg);
+      toast.error(msg, { duration: 6000 });
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_ID_CARD_SIZE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      const msg = `"${file.name}" is too large (${sizeMB} MB). Maximum allowed size is 1 MB. Please compress or resize the image and try again.`;
+      setError(msg);
+      toast.error(msg, { duration: 6000 });
+      e.target.value = "";
+      return;
+    }
+
     setIdCardFileName(file.name);
     setIdCardUploading(true);
     try {
@@ -85,6 +113,7 @@ export default function OnboardingPage() {
       if (!result.success || !result.data) {
         // Show a prominent toast error AND reset the file name
         const msg = result.error ?? "Failed to upload ID card.";
+        setError(msg);
         toast.error(msg, { duration: 6000 });
         setIdCardFileName("");
         // Reset the file input so the user can re-select
@@ -94,7 +123,14 @@ export default function OnboardingPage() {
       setIdCardUrl(result.data.url);
       toast.success("ID card uploaded successfully!");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to upload ID card.";
+      // A transport/network failure (e.g. connection dropped mid-upload)
+      // won't carry a friendly message from the server action, so give a
+      // generic-but-actionable one instead of a raw error string.
+      const msg =
+        err instanceof Error && err.message && !/fetch|network|failed to/i.test(err.message)
+          ? err.message
+          : "Upload failed — please check your connection and try again with a smaller file if the problem continues.";
+      setError(msg);
       toast.error(msg, { duration: 6000 });
       setIdCardFileName("");
       e.target.value = "";
@@ -105,15 +141,20 @@ export default function OnboardingPage() {
 
   // ── PGIMER student submission ────────────────────────────────────────────────
 
+  const failField = (msg: string) => {
+    setError(msg);
+    toast.error(msg);
+  };
+
   const handlePgimerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!formData.full_name.trim()) return setError("Full name is required.");
-    if (!formData.phone_number.trim()) return setError("Phone number is required.");
-    if (!formData.course) return setError("Course is required.");
-    if (!formData.batch_year.match(/^\d{4}$/)) return setError("Batch year must be 4 digits.");
-    if (!idCardUrl) return setError("Please upload your PGIMER ID card.");
+    if (!formData.full_name.trim()) return failField("Full name is required.");
+    if (!formData.phone_number.trim()) return failField("Phone number is required.");
+    if (!formData.course) return failField("Course is required.");
+    if (!formData.batch_year.match(/^\d{4}$/)) return failField("Batch year must be 4 digits.");
+    if (!idCardUrl) return failField("Please upload your PGIMER ID card.");
 
     startTransition(async () => {
       const result = await completeOnboarding({
@@ -125,7 +166,7 @@ export default function OnboardingPage() {
         id_card_url: idCardUrl,
       });
       if (!result.success) {
-        setError(result.error ?? "Something went wrong.");
+        failField(result.error ?? "Something went wrong. Please try again.");
       } else {
         setStep("success");
         setTimeout(() => router.push("/dashboard"), 2000);
@@ -136,10 +177,10 @@ export default function OnboardingPage() {
   // ── Razorpay membership payment ──────────────────────────────────────────────
 
   const handleRazorpayPayment = useCallback(async () => {
-    if (!formData.full_name.trim()) return setError("Please fill in your name first.");
-    if (!formData.phone_number.trim()) return setError("Please fill in your phone number first.");
-    if (!formData.course) return setError("Please select your course first.");
-    if (!formData.institution_name.trim()) return setError("Please enter your institution name.");
+    if (!formData.full_name.trim()) return failField("Please fill in your name first.");
+    if (!formData.phone_number.trim()) return failField("Please fill in your phone number first.");
+    if (!formData.course) return failField("Please select your course first.");
+    if (!formData.institution_name.trim()) return failField("Please enter your institution name.");
 
     setMembershipPaying(true);
     setError("");
@@ -194,11 +235,11 @@ export default function OnboardingPage() {
       if (!window.Razorpay) throw new Error("Razorpay SDK not loaded. Please refresh and try again.");
       const rz = new window.Razorpay(options);
       rz.on("payment.failed", (resp: any) => {
-        setError(`Payment failed: ${resp.error?.description ?? "Unknown error"}`);
+        failField(`Payment failed: ${resp.error?.description ?? "Unknown error"}`);
       });
       rz.open();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Payment failed.");
+      failField(err instanceof Error ? err.message : "Payment failed. Please try again.");
     } finally {
       setMembershipPaying(false);
     }
@@ -377,15 +418,12 @@ export default function OnboardingPage() {
                       onChange={handleIdCardChange}
                       className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Accepted: JPG, JPEG, PNG, GIF, WEBP, BMP, HEIC, HEIF, AVIF, TIFF, SVG · Max size: <strong className="text-foreground">1 MB</strong>
+                    </p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                       {idCardUploading && <><Loader2 className="size-3 animate-spin" /> Uploading…</>}
                       {!idCardUploading && idCardUrl && <><CheckCircle2 className="size-3 text-green-500" /> Uploaded: {idCardFileName}</>}
-                      {!idCardUploading && !idCardUrl && (
-                        <>
-                          <AlertCircle className="size-3 shrink-0" />
-                          Any image format (JPG, PNG, HEIC, AVIF…) · Max size: <strong className="text-foreground">1 MB</strong>
-                        </>
-                      )}
                     </p>
                   </div>
                   <Button
@@ -422,14 +460,14 @@ export default function OnboardingPage() {
                   {/* What you get */}
                   <ul className="space-y-1.5 text-sm text-muted-foreground">
                     {[
-                      "📚 e-Library Access",
-                      "📖 Exclusive Study Material",
-                      "🎓 Discounted Registration",
-                      "💻 e-Classes & Online Lectures",
-                      "🧑‍⚕️ Academic & Professional Networking",
-                      "🏥 Association Activities",
-                      "📢 Member Updates & Opportunities",
-                      "🤝 Student Community Benefits",
+                      "e-Library Access",
+                      "Exclusive Study Material",
+                      "Discounted Registration",
+                      "e-Classes & Online Lectures",
+                      "Academic & Professional Networking",
+                      "Association Activities",
+                      "Member Updates & Opportunities",
+                      "Student Community Benefits",
                     ].map((benefit) => (
                       <li key={benefit} className="flex items-center gap-2">
                         <span className="text-sm leading-snug">{benefit}</span>
