@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard,
   Users,
+  UserCheck,
   Bell,
   Calendar,
   BookOpen,
@@ -30,6 +31,7 @@ export const studentLinks = [
 
 export const adminLinks = [
   { href: "/dashboard/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/admin/users", label: "Users", icon: UserCheck },
   { href: "/dashboard/admin/memberships", label: "Memberships", icon: Users },
   { href: "/dashboard/admin/notices", label: "Notices & Minutes", icon: Bell },
   { href: "/dashboard/admin/events", label: "Events", icon: Calendar },

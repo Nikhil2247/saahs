@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useTransition } from "react";
 import { updateMemberRole, deleteMember } from "@/app/actions/admin/memberships";
 import { reviewMembership } from "@/app/actions/memberships";
 import { Button } from "@/components/ui/button";
@@ -42,11 +42,13 @@ import {
   IdCard,
   Building,
   GraduationCap,
-  Eye,
   CreditCard,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { useState } from "react";
+import { useCallback } from "react";
 
 export type ProfileDB = {
   id: string;
@@ -61,6 +63,7 @@ export type ProfileDB = {
   membership_payment_status: string | null;
   id_card_url: string | null;
   avatar_url: string | null;
+  onboarding_complete: boolean | null;
   created_at: string;
 };
 
@@ -83,12 +86,19 @@ export function MembershipsClient({
   profiles,
   page,
   totalPages,
+  search,
+  status,
+  totalCount,
 }: {
   profiles: ProfileDB[];
   page: number;
   totalPages: number;
+  search: string;
+  status: string;
+  totalCount: number;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [editingRole, setEditingRole] = useState<ProfileDB | null>(null);
   const [selectedRoleValue, setSelectedRoleValue] = useState<string>("");
   const [viewingIdCard, setViewingIdCard] = useState<ProfileDB | null>(null);
@@ -96,26 +106,31 @@ export function MembershipsClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReviewing, startReviewing] = useTransition();
 
-  // Search & Filter
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // Local search input (debounced push to URL)
+  const [localSearch, setLocalSearch] = useState(search);
 
-  const filteredProfiles = useMemo(() => {
-    return profiles.filter((p) => {
-      const matchesSearch =
-        !searchQuery ||
-        p.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.course?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.department?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Build URL with updated params while preserving others
+  const buildUrl = useCallback(
+    (overrides: Record<string, string | number>) => {
+      const params = new URLSearchParams();
+      const merged = { search, status, page, ...overrides };
+      if (merged.search) params.set("search", String(merged.search));
+      if (merged.status && merged.status !== "all") params.set("status", String(merged.status));
+      if (Number(merged.page) > 1) params.set("page", String(merged.page));
+      const qs = params.toString();
+      return `${pathname}${qs ? `?${qs}` : ""}`;
+    },
+    [search, status, page, pathname]
+  );
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        p.membership_status?.toLowerCase() === statusFilter.toLowerCase();
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(buildUrl({ search: localSearch, page: 1 }));
+  };
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [profiles, searchQuery, statusFilter]);
+  const handleStatusChange = (newStatus: string) => {
+    router.push(buildUrl({ status: newStatus, page: 1 }));
+  };
 
   const handleReview = (profile: ProfileDB, decision: "Approved" | "Rejected") => {
     startReviewing(async () => {
@@ -174,24 +189,48 @@ export function MembershipsClient({
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground">Member Directory</h2>
           <p className="text-xs text-muted-foreground">
-            Manage registrations, verify PGIMER students & outside delegates, update leadership roles.
+            Manage registrations, verify PGIMER students &amp; outside delegates, update leadership roles.
+            Only users who completed their profile onboarding are shown here.
           </p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-1.5 border border-border">
+          <Users className="size-3.5 shrink-0" />
+          <span><strong className="text-foreground">{totalCount}</strong> onboarded {totalCount === 1 ? "member" : "members"}</span>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-2.5 rounded-lg border border-border">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Search by name, email, or course..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-8 text-xs bg-background"
-          />
-        </div>
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Search by name, email, or course..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="pl-8 h-8 text-xs bg-background"
+            />
+          </div>
+          <Button type="submit" size="sm" className="h-8 px-3 text-xs shrink-0">
+            Search
+          </Button>
+          {(localSearch || search) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs shrink-0"
+              onClick={() => {
+                setLocalSearch("");
+                router.push(buildUrl({ search: "", page: 1 }));
+              }}
+            >
+              <X className="size-3" />
+            </Button>
+          )}
+        </form>
 
-        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-auto">
+        <Tabs value={status} onValueChange={handleStatusChange} className="w-auto">
           <TabsList className="h-8 p-0.5">
             <TabsTrigger value="all" className="text-xs px-2.5 h-7">All</TabsTrigger>
             <TabsTrigger value="pending" className="text-xs px-2.5 h-7">Pending</TabsTrigger>
@@ -201,7 +240,7 @@ export function MembershipsClient({
         </Tabs>
       </div>
 
-      {/* Compact Members Table */}
+      {/* Members Table */}
       <div className="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
         <Table>
           <TableHeader>
@@ -210,19 +249,19 @@ export function MembershipsClient({
               <TableHead className="text-xs font-semibold py-2.5">Discipline / Course</TableHead>
               <TableHead className="text-xs font-semibold py-2.5">Institution / Type</TableHead>
               <TableHead className="text-xs font-semibold py-2.5">Assigned Role</TableHead>
-              <TableHead className="text-xs font-semibold py-2.5">Status & Fee</TableHead>
+              <TableHead className="text-xs font-semibold py-2.5">Status &amp; Fee</TableHead>
               <TableHead className="text-xs font-semibold py-2.5 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProfiles.length === 0 ? (
+            {profiles.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-28 text-center text-xs text-muted-foreground">
                   No member records found matching your criteria.
                 </TableCell>
               </TableRow>
             ) : (
-              filteredProfiles.map((profile) => (
+              profiles.map((profile) => (
                 <TableRow key={profile.id} className="hover:bg-muted/30">
                   <TableCell className="py-2.5">
                     <div className="flex items-center gap-2.5">
@@ -355,34 +394,32 @@ export function MembershipsClient({
           </TableBody>
         </Table>
 
-        {/* Compact Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between py-2.5 px-4 border-t border-border bg-muted/10">
-            <span className="text-xs text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2.5 text-xs"
-                onClick={() => router.push(`/dashboard/admin/memberships?page=${page - 1}`)}
-                disabled={page <= 1}
-              >
-                <ChevronLeft className="size-3.5 mr-1" /> Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2.5 text-xs"
-                onClick={() => router.push(`/dashboard/admin/memberships?page=${page + 1}`)}
-                disabled={page >= totalPages}
-              >
-                Next <ChevronRight className="size-3.5 ml-1" />
-              </Button>
-            </div>
+        {/* Server-side Pagination */}
+        <div className="flex items-center justify-between py-2.5 px-4 border-t border-border bg-muted/10">
+          <span className="text-xs text-muted-foreground">
+            Page {page} of {totalPages} &bull; {totalCount} total
+          </span>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              onClick={() => router.push(buildUrl({ page: page - 1 }))}
+              disabled={page <= 1}
+            >
+              <ChevronLeft className="size-3.5 mr-1" /> Prev
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5 text-xs"
+              onClick={() => router.push(buildUrl({ page: page + 1 }))}
+              disabled={page >= totalPages}
+            >
+              Next <ChevronRight className="size-3.5 ml-1" />
+            </Button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* ID Card Modal */}

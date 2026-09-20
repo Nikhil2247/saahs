@@ -1,26 +1,24 @@
 import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
-import { MembershipsClient, ProfileDB } from "./memberships-client"
+import { UsersClient, UserDB } from "./users-client"
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminMembershipsPage({
+export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; search?: string; status?: string }>
+  searchParams: Promise<{ page?: string; search?: string; onboarded?: string }>
 }) {
-  const { page: pageStr, search = '', status = 'all' } = await searchParams;
+  const { page: pageStr, search = '', onboarded = 'all' } = await searchParams;
   const page = Math.max(1, parseInt(pageStr || '1', 10));
-  const limit = 10;
+  const limit = 15;
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
   const supabase = createSupabaseAdminClient();
 
-  // Base query — only users who completed onboarding can have a membership
   let query = supabase
     .from('profiles')
-    .select('*', { count: 'exact' })
-    .eq('onboarding_complete', true);
+    .select('id, full_name, email, role, department, course, institution_name, is_pgimer_student, avatar_url, onboarding_complete, membership_status, created_at', { count: 'exact' });
 
   // Server-side search filter
   if (search.trim()) {
@@ -29,31 +27,31 @@ export default async function AdminMembershipsPage({
     );
   }
 
-  // Server-side status filter
-  if (status !== 'all') {
-    const capitalised = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-    query = query.eq('membership_status', capitalised);
+  // Server-side onboarding filter
+  if (onboarded === 'yes') {
+    query = query.eq('onboarding_complete', true);
+  } else if (onboarded === 'no') {
+    query = query.eq('onboarding_complete', false);
   }
 
-  const { data: profiles, count, error } = await query
-    .order('role', { ascending: true })
+  const { data: users, count, error } = await query
     .order('created_at', { ascending: false })
     .range(from, to);
 
   const totalPages = count ? Math.ceil(count / limit) : 1;
 
   if (error) {
-    return <div className="text-red-500 p-6">Failed to load memberships.</div>
+    return <div className="text-red-500 p-6">Failed to load users. {error.message}</div>
   }
 
   return (
     <div className="dashboard-container">
-      <MembershipsClient
-        profiles={(profiles as ProfileDB[]) || []}
+      <UsersClient
+        users={(users as UserDB[]) || []}
         page={page}
         totalPages={totalPages}
         search={search}
-        status={status}
+        onboarded={onboarded}
         totalCount={count ?? 0}
       />
     </div>
