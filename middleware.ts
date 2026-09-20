@@ -29,6 +29,7 @@ const ADMIN_ROLES = new Set([
   "General Secretary",
   "Vice President",
   "President",
+  "Faculty",
 ]);
 
 const SESSION_COOKIE_NAME = "saahs_session";

@@ -15,6 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ChevronLeft,
   ChevronRight,
   Search,
@@ -24,6 +31,7 @@ import {
   GraduationCap,
   Building,
   Users,
+  Filter,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -40,7 +48,25 @@ export type UserDB = {
   onboarding_complete: boolean | null;
   membership_status: string | null;
   created_at: string;
+  batch_year?: string | null;
 };
+
+const ALL_ROLES = [
+  "President",
+  "Vice President",
+  "General Secretary",
+  "Treasurer",
+  "Literary Secretary",
+  "Governing Body Member",
+  "Executive Body Member",
+  "Faculty",
+  "PGIMER Student",
+  "Outside Member",
+  "SAAHS Member",
+  "Public User",
+];
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 export function UsersClient({
   users,
@@ -49,6 +75,10 @@ export function UsersClient({
   search,
   onboarded,
   totalCount,
+  deptFilter,
+  roleFilter,
+  batchFilter,
+  pageSize,
 }: {
   users: UserDB[];
   page: number;
@@ -56,31 +86,68 @@ export function UsersClient({
   search: string;
   onboarded: string;
   totalCount: number;
+  deptFilter: string;
+  roleFilter: string;
+  batchFilter: string;
+  pageSize: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const [localSearch, setLocalSearch] = useState(search);
+  const [localDept, setLocalDept] = useState(deptFilter);
+  const [localBatch, setLocalBatch] = useState(batchFilter);
 
   const buildUrl = useCallback(
     (overrides: Record<string, string | number>) => {
       const params = new URLSearchParams();
-      const merged = { search, onboarded, page, ...overrides };
+      const merged = {
+        search,
+        onboarded,
+        page,
+        dept: deptFilter,
+        role: roleFilter,
+        batch: batchFilter,
+        pageSize,
+        ...overrides,
+      };
       if (merged.search) params.set("search", String(merged.search));
       if (merged.onboarded && merged.onboarded !== "all") params.set("onboarded", String(merged.onboarded));
       if (Number(merged.page) > 1) params.set("page", String(merged.page));
+      if (merged.dept) params.set("dept", String(merged.dept));
+      if (merged.role) params.set("role", String(merged.role));
+      if (merged.batch) params.set("batch", String(merged.batch));
+      if (Number(merged.pageSize) !== 20) params.set("pageSize", String(merged.pageSize));
       const qs = params.toString();
       return `${pathname}${qs ? `?${qs}` : ""}`;
     },
-    [search, onboarded, page, pathname]
+    [search, onboarded, page, deptFilter, roleFilter, batchFilter, pageSize, pathname]
   );
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(buildUrl({ search: localSearch, page: 1 }));
+    router.push(buildUrl({ search: localSearch, dept: localDept, batch: localBatch, page: 1 }));
   };
+
+  const clearAllFilters = () => {
+    setLocalSearch("");
+    setLocalDept("");
+    setLocalBatch("");
+    router.push(pathname);
+  };
+
+  const hasActiveFilters = search || deptFilter || roleFilter || batchFilter || onboarded !== "all";
 
   const handleOnboardedChange = (val: string) => {
     router.push(buildUrl({ onboarded: val, page: 1 }));
+  };
+
+  const handleRoleFilterChange = (val: string | null) => {
+    router.push(buildUrl({ role: val === "all" || !val ? "" : val, page: 1 }));
+  };
+
+  const handlePageSizeChange = (val: string | null) => {
+    if (!val) return;
+    router.push(buildUrl({ pageSize: Number(val), page: 1 }));
   };
 
   return (
@@ -93,11 +160,11 @@ export function UsersClient({
             View all registered users and their onboarding status. Use the Memberships page to manage membership applications.
           </p>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-emerald-500/10 rounded-md px-3 py-1.5 border border-emerald-200">
             <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
             <span>
-              <strong className="text-emerald-700">{users.filter(u => u.onboarding_complete).length}</strong>
+              <strong className="text-emerald-700">{users.filter((u) => u.onboarding_complete).length}</strong>
               {" "}onboarded on this page
             </span>
           </div>
@@ -109,49 +176,100 @@ export function UsersClient({
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card p-2.5 rounded-lg border border-border">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm flex items-center gap-2">
-          <div className="relative flex-1">
+      <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+        {/* Search row */}
+        <form onSubmit={handleSearchSubmit} className="flex flex-wrap gap-2 items-end">
+          <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="Search by name, email, course..."
+              placeholder="Search name, email, course..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               className="pl-8 h-8 text-xs bg-background"
             />
           </div>
+
+          <div className="relative min-w-[140px]">
+            <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground pointer-events-none" />
+            <Input
+              placeholder="Filter by dept..."
+              value={localDept}
+              onChange={(e) => setLocalDept(e.target.value)}
+              className="pl-7 h-8 text-xs bg-background"
+            />
+          </div>
+
+          <div className="min-w-[110px]">
+            <Input
+              placeholder="Batch year..."
+              value={localBatch}
+              onChange={(e) => setLocalBatch(e.target.value)}
+              className="h-8 text-xs bg-background"
+            />
+          </div>
+
           <Button type="submit" size="sm" className="h-8 px-3 text-xs shrink-0">
-            Search
+            Apply
           </Button>
-          {(localSearch || search) && (
+          {hasActiveFilters && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="h-8 px-2 text-xs shrink-0"
-              onClick={() => {
-                setLocalSearch("");
-                router.push(buildUrl({ search: "", page: 1 }));
-              }}
+              onClick={clearAllFilters}
             >
-              <X className="size-3" />
+              <X className="size-3 mr-1" /> Clear
             </Button>
           )}
         </form>
 
-        <Tabs value={onboarded} onValueChange={handleOnboardedChange} className="w-auto">
-          <TabsList className="h-8 p-0.5">
-            <TabsTrigger value="all" className="text-xs px-2.5 h-7">All Users</TabsTrigger>
-            <TabsTrigger value="yes" className="text-xs px-2.5 h-7">
-              <CheckCircle2 className="size-3 mr-1 text-emerald-600" />
-              Onboarded
-            </TabsTrigger>
-            <TabsTrigger value="no" className="text-xs px-2.5 h-7">
-              <AlertCircle className="size-3 mr-1 text-amber-500" />
-              Not Onboarded
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Second row: Role filter + Onboarding tabs + Page size */}
+        <div className="flex flex-wrap items-center gap-2 justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={roleFilter || "all"} onValueChange={handleRoleFilterChange}>
+              <SelectTrigger className="h-8 text-xs w-[170px] bg-background">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All Roles</SelectItem>
+                {ALL_ROLES.map((r) => (
+                  <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Tabs value={onboarded} onValueChange={handleOnboardedChange} className="w-auto">
+              <TabsList className="h-8 p-0.5">
+                <TabsTrigger value="all" className="text-xs px-2.5 h-7">All Users</TabsTrigger>
+                <TabsTrigger value="yes" className="text-xs px-2.5 h-7">
+                  <CheckCircle2 className="size-3 mr-1 text-emerald-600" />
+                  Onboarded
+                </TabsTrigger>
+                <TabsTrigger value="no" className="text-xs px-2.5 h-7">
+                  <AlertCircle className="size-3 mr-1 text-amber-500" />
+                  Not Onboarded
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Page size selector */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+            <span>Show</span>
+            <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
+              <SelectTrigger className="h-8 w-[70px] text-xs bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <SelectItem key={n} value={String(n)} className="text-xs">{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span>per page</span>
+          </div>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -160,7 +278,7 @@ export function UsersClient({
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
               <TableHead className="text-xs font-semibold py-2.5">User</TableHead>
-              <TableHead className="text-xs font-semibold py-2.5">Discipline / Course</TableHead>
+              <TableHead className="text-xs font-semibold py-2.5">Dept / Course / Batch</TableHead>
               <TableHead className="text-xs font-semibold py-2.5">Institution</TableHead>
               <TableHead className="text-xs font-semibold py-2.5">Role</TableHead>
               <TableHead className="text-xs font-semibold py-2.5">Membership</TableHead>
@@ -198,11 +316,18 @@ export function UsersClient({
                     </div>
                   </TableCell>
 
-                  {/* Course / Dept */}
+                  {/* Course / Dept / Batch */}
                   <TableCell className="py-2.5">
-                    <div className="text-xs text-foreground truncate max-w-[130px]">
-                      {user.course || user.department || (
-                        <span className="text-muted-foreground italic">—</span>
+                    <div className="space-y-0.5">
+                      <div className="text-xs text-foreground truncate max-w-[130px]">
+                        {user.course || user.department || (
+                          <span className="text-muted-foreground italic">—</span>
+                        )}
+                      </div>
+                      {user.batch_year && (
+                        <div className="text-[10px] text-muted-foreground">
+                          Batch {user.batch_year}
+                        </div>
                       )}
                     </div>
                   </TableCell>
@@ -287,6 +412,9 @@ export function UsersClient({
         <div className="flex items-center justify-between py-2.5 px-4 border-t border-border bg-muted/10">
           <span className="text-xs text-muted-foreground">
             Page {page} of {totalPages} &bull; {totalCount} total users
+            {hasActiveFilters && (
+              <span className="ml-1 text-primary font-medium">(filtered)</span>
+            )}
           </span>
           <div className="flex items-center gap-1.5">
             <Button
@@ -298,6 +426,21 @@ export function UsersClient({
             >
               <ChevronLeft className="size-3.5 mr-1" /> Prev
             </Button>
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const p = i + 1;
+              return (
+                <Button
+                  key={p}
+                  variant={p === page ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 w-7 p-0 text-xs"
+                  onClick={() => router.push(buildUrl({ page: p }))}
+                >
+                  {p}
+                </Button>
+              );
+            })}
+            {totalPages > 5 && <span className="text-xs text-muted-foreground px-1">...</span>}
             <Button
               variant="outline"
               size="sm"
