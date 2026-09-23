@@ -17,7 +17,6 @@ export async function registerForEvent(
   eventId: number,
   payload: {
     sportChoices?: string[];
-    phoneNumber?: string;
     waiverAccepted?: boolean;
     isSportsEvent?: boolean;
   }
@@ -62,7 +61,6 @@ export async function registerForEvent(
     event_id: eventId,
     user_id: session.userId,
     sport_choices: payload.sportChoices ?? [],
-    phone_number: payload.phoneNumber ?? null,
     waiver_accepted: payload.waiverAccepted ?? false,
   } as any);
 
