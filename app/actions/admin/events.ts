@@ -40,6 +40,8 @@ export async function createEvent(formData: FormData) {
     if (event_type === 'General') category = 'Academic';
   }
 
+  const organizer_info = formData.get("organizer_info") as string || null;
+
   const { error } = await supabase.from("events").insert({
     title,
     description,
@@ -47,6 +49,7 @@ export async function createEvent(formData: FormData) {
     schedule: new Date(start_time).toISOString(),
     venue: location,
     banner_url: image_url,
+    organizer_info: organizer_info || null,
     past_archive: false
   });
 

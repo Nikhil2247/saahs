@@ -204,11 +204,17 @@ export interface EventRegistrationRow {
   event_id: number;
   user_id: string;                    // UUID FK → profiles
   registered_at: string;
+  sport_choices: string[];            // e.g. ["Football", "BGMI"]
+  phone_number: string | null;
+  waiver_accepted: boolean;
 }
 
 export interface EventRegistrationInsert {
   event_id: number;
   user_id: string;
+  sport_choices?: string[];
+  phone_number?: string | null;
+  waiver_accepted?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
