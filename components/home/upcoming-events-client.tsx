@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { registerForEvent, cancelEventRegistration } from "@/app/actions/events"
 import { SOLO_SPORTS, TEAM_SPORTS } from "@/lib/sports-constants"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +64,7 @@ export function UpcomingEventsClient({
   profile,
   registeredEventIds,
 }: Props) {
+  const router = useRouter()
   const [registeredIds, setRegisteredIds] = useState<Set<number>>(
     new Set(registeredEventIds)
   )
@@ -82,16 +84,7 @@ export function UpcomingEventsClient({
   const allSelectedSports = [...selectedSoloSports, ...selectedTeamSports]
 
   const openSportsDialog = (event: EventItem) => {
-    if (!isLoggedIn) {
-      // Redirect to login if not logged in
-      window.location.href = "/login"
-      return
-    }
-    setSelectedSoloSports([])
-    setSelectedTeamSports([])
-    setWaiverAccepted(false)
-    setWaiverExpanded(false)
-    setSportsEvent(event)
+    router.push("/sports")
   }
 
   const toggleSolo = (s: string) =>
@@ -292,9 +285,11 @@ export function UpcomingEventsClient({
                       <Button
                         size="sm"
                         className="h-7 text-xs px-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold"
-                        onClick={() => openSportsDialog(event)}
+                        asChild
                       >
-                        <Trophy className="mr-1 size-3" /> Register
+                        <Link href="/sports">
+                          <Trophy className="mr-1 size-3" /> Register
+                        </Link>
                       </Button>
                     ) : (
                       <button

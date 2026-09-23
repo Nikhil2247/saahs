@@ -1,31 +1,20 @@
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Hero } from "@/components/home/hero"
-import { StatsGrid } from "@/components/home/stats-grid"
 import { PresidentMessage } from "@/components/home/president-message"
 import { NoticesFeed } from "@/components/home/notices-feed"
 import { UpcomingEvents } from "@/components/home/upcoming-events"
-import { createSupabaseAdminClient } from "@/src/lib/supabase/admin"
 import { getSession } from "@/lib/auth/session"
 
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-  const [session, supabase] = await Promise.all([
-    getSession(),
-    Promise.resolve(createSupabaseAdminClient()),
-  ])
+  const session = await getSession()
   const isLoggedIn = !!session
-
-  const { count: activeMemberCount } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true })
-    .eq("membership_status", "Approved")
 
   return (
     <>
       <Hero isLoggedIn={isLoggedIn} />
-      <StatsGrid activeMemberCount={activeMemberCount ?? 0} />
 
       <section className="mx-auto max-w-7xl px-4 pb-14">
         <div className="grid gap-6 lg:grid-cols-2">

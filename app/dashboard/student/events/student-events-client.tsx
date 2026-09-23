@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { registerForEvent, cancelEventRegistration } from "@/app/actions/events";
 import { SOLO_SPORTS, TEAM_SPORTS } from "@/lib/sports-constants";
 import { Input } from "@/components/ui/input";
@@ -53,6 +55,7 @@ export function StudentEventsClient({
   registeredEventIds: number[];
   profile: ProfileSnippet;
 }) {
+  const router = useRouter();
   const [registeredIds, setRegisteredIds] = useState<Set<number>>(
     new Set(registeredEventIds)
   );
@@ -86,11 +89,7 @@ export function StudentEventsClient({
   }, [events, activeTab, searchQuery, now]);
 
   const openSportsDialog = (event: EventRow) => {
-    setSelectedSoloSports([]);
-    setSelectedTeamSports([]);
-    setWaiverAccepted(false);
-    setWaiverExpanded(false);
-    setSportsDialogEvent(event);
+    router.push("/sports");
   };
 
   const toggleSoloSport = (sport: string) =>
@@ -322,11 +321,12 @@ export function StudentEventsClient({
                     ) : isSports ? (
                       <Button
                         size="sm"
-                        disabled={isPending}
+                        asChild
                         className="h-7 text-xs px-2.5 font-semibold bg-amber-500 hover:bg-amber-600 text-white"
-                        onClick={(ev) => { ev.stopPropagation(); openSportsDialog(e); }}
                       >
-                        <Trophy className="mr-1 size-3" /> Register
+                        <Link href="/sports">
+                          <Trophy className="mr-1 size-3" /> Register
+                        </Link>
                       </Button>
                     ) : (
                       <Button

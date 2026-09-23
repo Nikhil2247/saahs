@@ -199,6 +199,14 @@ export type EventUpdate = Partial<EventInsert>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface TeamMember {
+  name: string;
+  roll_number?: string;
+  department?: string;
+  phone?: string;
+  is_captain?: boolean;
+}
+
 export interface EventRegistrationRow {
   id: number;
   event_id: number;
@@ -207,6 +215,9 @@ export interface EventRegistrationRow {
   sport_choices: string[];            // e.g. ["Football", "BGMI"]
   phone_number: string | null;
   waiver_accepted: boolean;
+  team_name?: string | null;
+  is_captain?: boolean;
+  team_members?: TeamMember[];
 }
 
 export interface EventRegistrationInsert {
@@ -215,6 +226,9 @@ export interface EventRegistrationInsert {
   sport_choices?: string[];
   phone_number?: string | null;
   waiver_accepted?: boolean;
+  team_name?: string | null;
+  is_captain?: boolean;
+  team_members?: TeamMember[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

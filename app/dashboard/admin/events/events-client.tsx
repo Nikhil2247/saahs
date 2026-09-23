@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu"
+import Link from "next/link"
 import {
   MoreHorizontal,
   Plus,
@@ -42,6 +43,8 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Crown,
+  ExternalLink,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -66,6 +69,9 @@ function exportToCSV(registrations: EventRegistrationDetail[], eventTitle: strin
     "Batch Year",
     "Phone",
     "Sports / Events",
+    "Team Name",
+    "Role",
+    "Squad Roster",
     "Waiver Accepted",
     "Registered At",
   ]
@@ -77,6 +83,9 @@ function exportToCSV(registrations: EventRegistrationDetail[], eventTitle: strin
     r.profile.batch_year ?? "",
     r.phone_number ?? "",
     r.sport_choices.join("; "),
+    r.team_name ?? "",
+    r.is_captain ? "Captain" : "Participant",
+    (r.team_members || []).map((m) => `${m.name}${m.roll_number ? ` (${m.roll_number})` : ""}`).join("; "),
     r.waiver_accepted ? "Yes" : "No",
     new Date(r.registered_at).toLocaleString(),
   ])
@@ -268,6 +277,11 @@ export function EventsClient({
                           >
                             <Users className="mr-2 h-4 w-4" /> View Registrations
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => router.push(`/dashboard/admin/events/${event.id}/registrations`)}
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4 text-brand" /> Full Page Registrations
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditingEvent(event)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
                           </DropdownMenuItem>
@@ -323,16 +337,30 @@ export function EventsClient({
         onOpenChange={(open) => !open && setViewingEvent(null)}
       >
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <Users className="size-4 text-primary" />
-              Registrations — {viewingEvent?.title}
-            </DialogTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {regsLoading
-                ? "Loading..."
-                : `${registrations.length} student${registrations.length !== 1 ? "s" : ""} registered`}
-            </p>
+          <DialogHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <div>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <Users className="size-4 text-primary" />
+                Registrations — {viewingEvent?.title}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {regsLoading
+                  ? "Loading..."
+                  : `${registrations.length} student${registrations.length !== 1 ? "s" : ""} registered`}
+              </p>
+            </div>
+            {viewingEvent && (
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                className="gap-1.5 text-xs font-semibold shrink-0"
+              >
+                <Link href={`/dashboard/admin/events/${viewingEvent.id}/registrations`}>
+                  <ExternalLink className="size-3.5 text-brand" /> Full Page View
+                </Link>
+              </Button>
+            )}
           </DialogHeader>
 
           {regsLoading ? (
@@ -352,7 +380,7 @@ export function EventsClient({
                     <TableHead className="text-xs font-semibold py-2">Name</TableHead>
                     <TableHead className="text-xs font-semibold py-2">Roll No.</TableHead>
                     <TableHead className="text-xs font-semibold py-2">Dept / Course</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Batch</TableHead>
+                    <TableHead className="text-xs font-semibold py-2">Team / Squad</TableHead>
                     <TableHead className="text-xs font-semibold py-2">Phone</TableHead>
                     <TableHead className="text-xs font-semibold py-2">Sports</TableHead>
                     <TableHead className="text-xs font-semibold py-2 text-center">Waiver</TableHead>
@@ -374,8 +402,28 @@ export function EventsClient({
                       <TableCell className="py-2 text-xs text-muted-foreground max-w-[120px] truncate">
                         {reg.profile.course || reg.profile.department || "—"}
                       </TableCell>
-                      <TableCell className="py-2 text-xs text-muted-foreground">
-                        {reg.profile.batch_year ?? "—"}
+                      <TableCell className="py-2 text-xs">
+                        {reg.team_name ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-foreground truncate max-w-[130px]">
+                              {reg.team_name}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              {reg.is_captain && (
+                                <Badge className="text-[8px] px-1 py-0 bg-amber-500 text-white font-bold border-none">
+                                  <Crown className="size-2 mr-0.5" /> Captain
+                                </Badge>
+                              )}
+                              {reg.team_members && reg.team_members.length > 0 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {reg.team_members.length} players
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground italic">Solo</span>
+                        )}
                       </TableCell>
                       <TableCell className="py-2 text-xs text-muted-foreground">
                         {reg.phone_number ?? "—"}
@@ -418,27 +466,41 @@ export function EventsClient({
             </div>
           )}
 
-          <DialogFooter className="gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewingEvent(null)}
-            >
-              Close
-            </Button>
-            {!regsLoading && registrations.length > 0 && (
+          <DialogFooter className="gap-2 pt-2 sm:justify-between">
+            {viewingEvent ? (
               <Button
                 size="sm"
-                variant="default"
-                className="gap-1.5"
-                onClick={() =>
-                  exportToCSV(registrations, viewingEvent?.title ?? "event")
-                }
+                variant="outline"
+                asChild
+                className="gap-1.5 text-xs font-semibold"
               >
-                <Download className="size-3.5" />
-                Export CSV
+                <Link href={`/dashboard/admin/events/${viewingEvent.id}/registrations`}>
+                  <ExternalLink className="size-3.5 text-brand" /> Open Full Page View
+                </Link>
               </Button>
-            )}
+            ) : <div />}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewingEvent(null)}
+              >
+                Close
+              </Button>
+              {!regsLoading && registrations.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="gap-1.5"
+                  onClick={() =>
+                    exportToCSV(registrations, viewingEvent?.title ?? "event")
+                  }
+                >
+                  <Download className="size-3.5" />
+                  Export CSV
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

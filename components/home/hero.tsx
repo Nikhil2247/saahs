@@ -72,27 +72,6 @@ export function Hero({ isLoggedIn = false }: HeroProps) {
               Explore Portal
             </Link>
           </div>
-
-          <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-border pt-6">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Established
-              </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">2026</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Member Departments
-              </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">13</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                Registered Members
-              </dt>
-              <dd className="mt-1 text-lg font-semibold text-foreground">1,240+</dd>
-            </div>
-          </dl>
         </div>
 
         <div className="relative">
