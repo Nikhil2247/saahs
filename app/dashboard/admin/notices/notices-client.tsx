@@ -256,7 +256,8 @@ export function NoticesClient({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
-              <Input name="title" required placeholder="Title…" />
+              <Input name="title" required minLength={5} maxLength={255} placeholder="Title… (min 5 characters)" />
+              <p className="text-[11px] text-muted-foreground">Minimum 5 characters required.</p>
             </div>
 
             {/* General: category + pinned + text content */}
@@ -341,7 +342,7 @@ export function NoticesClient({
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
-              <Input name="title" defaultValue={editingNotice?.title} required />
+              <Input name="title" defaultValue={editingNotice?.title} required minLength={5} maxLength={255} />
             </div>
 
             {activeSection === "General" && (

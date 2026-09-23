@@ -73,7 +73,7 @@ export function DashboardTopbar({ user, isAdmin }: DashboardTopbarProps) {
                 <BrandMark />
               </div>
               <div className="flex-1 overflow-hidden">
-                <SidebarNavContent isAdmin={isAdmin} onNavigate={() => setMobileOpen(false)} />
+                <SidebarNavContent isAdmin={isAdmin} userRole={user.role} onNavigate={() => setMobileOpen(false)} />
               </div>
             </SheetContent>
           </Sheet>

@@ -14,11 +14,19 @@ export async function createNotice(formData: FormData) {
 
   const supabase = createSupabaseAdminClient();
 
-  const title    = formData.get("title") as string;
+  const title    = (formData.get("title") as string)?.trim();
   const content  = formData.get("content") as string;
   const category = formData.get("category") as string;
   const section  = (formData.get("section") as NoticeSection) || "General";
   const is_pinned = formData.get("is_pinned") === "true";
+
+  // Enforce title length to satisfy DB check constraint (5–255 chars)
+  if (!title || title.length < 5) {
+    return { success: false, error: "Title must be at least 5 characters long." };
+  }
+  if (title.length > 255) {
+    return { success: false, error: "Title must not exceed 255 characters." };
+  }
 
   // Handle image upload for Letters & Minutes section
   let image_url: string | null = null;
@@ -36,7 +44,7 @@ export async function createNotice(formData: FormData) {
 
   const { error } = await supabase.from("notices").insert({
     title,
-    content: content || "",
+    content: content?.trim() || "-",
     category: (category as NoticeCategory) || "General",
     section,
     is_pinned,
@@ -59,12 +67,20 @@ export async function updateNotice(id: string, formData: FormData) {
 
   const supabase = createSupabaseAdminClient();
 
-  const title    = formData.get("title") as string;
+  const title    = (formData.get("title") as string)?.trim();
   const content  = formData.get("content") as string;
   const category = formData.get("category") as string;
   const section  = (formData.get("section") as NoticeSection) || "General";
   const is_pinned = formData.get("is_pinned") === "true";
   const document_type = formData.get("document_type") as string | null;
+
+  // Enforce title length to satisfy DB check constraint (5–255 chars)
+  if (!title || title.length < 5) {
+    return { success: false, error: "Title must be at least 5 characters long." };
+  }
+  if (title.length > 255) {
+    return { success: false, error: "Title must not exceed 255 characters." };
+  }
 
   // Handle image upload for Letters & Minutes section
   let image_url: string | null = (formData.get("existing_image_url") as string) || null;
@@ -79,7 +95,7 @@ export async function updateNotice(id: string, formData: FormData) {
 
   const { error } = await supabase.from("notices").update({
     title,
-    content: content || "",
+    content: content?.trim() || "-",
     category: category as NoticeCategory,
     section,
     is_pinned,
