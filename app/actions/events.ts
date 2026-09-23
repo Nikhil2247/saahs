@@ -4,10 +4,9 @@ import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { getSession } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 
-import { SPORTS_LIST } from "@/lib/sports-constants";
+import { SPORTS_LIST, TEAM_SPORTS } from "@/lib/sports-constants";
 import type { TeamMember } from "@/types/database";
 
-export { SPORTS_LIST };
 
 export interface RegisterEventPayload {
   sportChoices?: string[];

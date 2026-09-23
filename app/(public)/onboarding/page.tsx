@@ -390,8 +390,8 @@ export default function OnboardingPage() {
                     onClick={() => { setIsPgimer(false); setError(""); }}
                     className={`flex-1 rounded-xl border-2 py-3 text-sm font-semibold transition-all ${
                       isPgimer === false
-                        ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                        : "border-border text-muted-foreground hover:border-amber-500/50"
+                        ? "border-brand bg-brand/10 text-brand"
+                        : "border-border text-muted-foreground hover:border-brand/50"
                     }`}
                   >
                     ✗ No, I'm from another institution
@@ -438,10 +438,10 @@ export default function OnboardingPage() {
 
               {/* ── Non-PGIMER path: Membership card ──────────────────────── */}
               {isPgimer === false && (
-                <div className="rounded-xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-5 space-y-4">
+                <div className="rounded-xl border-2 border-brand/40 bg-gradient-to-br from-brand/5 to-brand/10 p-5 space-y-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
-                      <CreditCard className="size-5 text-amber-600" />
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand/20">
+                      <CreditCard className="size-5 text-brand" />
                     </div>
                     <div>
                       <h3 className="font-bold text-foreground">Become a SAAHS Member</h3>
@@ -452,9 +452,9 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Membership fee highlight */}
-                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-center justify-between">
+                  <div className="rounded-lg border border-brand/30 bg-brand/10 px-4 py-3 flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">One-time Membership Fee</span>
-                    <span className="text-2xl font-extrabold text-amber-600">₹350</span>
+                    <span className="text-2xl font-extrabold text-brand">₹350</span>
                   </div>
 
                   {/* What you get */}
@@ -488,7 +488,7 @@ export default function OnboardingPage() {
                       value={formData.institution_name}
                       onChange={handleChange}
                       placeholder="e.g. AIIMS Delhi, Manipal College of Health Professions"
-                      className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                      className="mt-1.5 w-full rounded-lg border border-border bg-card px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
                     />
                   </div>
 
@@ -496,7 +496,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={handleRazorpayPayment}
                     disabled={membershipPaying || !razorpayLoaded}
-                    className="w-full gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                    className="w-full gap-2 bg-brand hover:bg-brand/90 text-brand-foreground font-bold"
                   >
                     {membershipPaying ? (
                       <><Loader2 className="size-4 animate-spin" /> Opening Payment…</>

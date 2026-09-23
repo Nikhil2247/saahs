@@ -228,7 +228,7 @@ export function StudentEventsClient({
                       <Badge
                         className={`absolute top-2 left-2 text-[10px] px-1.5 py-0 backdrop-blur-sm border ${
                           isSports
-                            ? "bg-amber-500/90 text-white border-amber-400"
+                            ? "bg-brand/90 text-brand-foreground border-brand"
                             : "bg-background/90 text-foreground border-border"
                         }`}
                       >
@@ -244,12 +244,12 @@ export function StudentEventsClient({
                     <div
                       className={`h-14 w-full flex items-center justify-center ${
                         isSports
-                          ? "bg-gradient-to-br from-amber-500/10 to-orange-500/10"
+                          ? "bg-gradient-to-br from-brand/10 to-brand/5"
                           : "bg-gradient-to-br from-primary/5 to-primary/10"
                       }`}
                     >
                       {isSports ? (
-                        <Trophy className="size-7 text-amber-500/60" />
+                        <Trophy className="size-7 text-brand/60" />
                       ) : (
                         <Calendar className="size-7 text-primary/40" />
                       )}
@@ -262,7 +262,7 @@ export function StudentEventsClient({
                         variant="outline"
                         className={`text-[10px] px-1.5 py-0 mb-1 ${
                           isSports
-                            ? "bg-amber-500/10 text-amber-700 border-amber-300"
+                            ? "bg-brand/10 text-brand border-brand/30"
                             : ""
                         }`}
                       >
@@ -322,7 +322,7 @@ export function StudentEventsClient({
                       <Button
                         size="sm"
                         asChild
-                        className="h-7 text-xs px-2.5 font-semibold bg-amber-500 hover:bg-amber-600 text-white"
+                        className="h-7 text-xs px-2.5 font-semibold bg-brand hover:bg-brand/90 text-brand-foreground"
                       >
                         <Link href="/sports">
                           <Trophy className="mr-1 size-3" /> Register
@@ -393,7 +393,7 @@ export function StudentEventsClient({
             {selectedEvent && !registeredIds.has(selectedEvent.id) && selectedEvent.schedule > now && !selectedEvent.past_archive && (
               <Button
                 size="sm"
-                className={selectedEvent.category === "Sports" ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}
+                className={selectedEvent.category === "Sports" ? "bg-brand hover:bg-brand/90 text-brand-foreground" : ""}
                 onClick={() => {
                   setSelectedEvent(null);
                   if (selectedEvent.category === "Sports") openSportsDialog(selectedEvent);
@@ -414,8 +414,8 @@ export function StudentEventsClient({
         <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-300/50">
-                <Trophy className="size-5 text-amber-500" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-brand/15 border border-brand/30">
+                <Trophy className="size-5 text-brand" />
               </div>
               <div>
                 <DialogTitle className="text-sm font-bold leading-tight">
@@ -509,8 +509,8 @@ export function StudentEventsClient({
 
             {/* ── Section 3: Team Games ── */}
             <div className="rounded-xl border border-border overflow-hidden">
-              <div className="px-3.5 py-2.5 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-b border-border flex items-center gap-2">
-                <Users className="size-3.5 text-amber-500 shrink-0" />
+              <div className="px-3.5 py-2.5 bg-gradient-to-r from-brand/5 to-brand/10 border-b border-border flex items-center gap-2">
+                <Users className="size-3.5 text-brand shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-foreground">TEAM games</p>
                   <p className="text-[10px] text-muted-foreground">Select any team events you wish to participate in</p>
@@ -524,14 +524,14 @@ export function StudentEventsClient({
                       key={sport}
                       className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-all text-xs ${
                         checked
-                          ? "border-amber-400 bg-amber-500/8 text-amber-800 dark:text-amber-300"
+                          ? "border-brand/60 bg-brand/8 text-brand"
                           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30 text-foreground"
                       }`}
                     >
                       <Checkbox
                         checked={checked}
                         onCheckedChange={() => toggleTeamSport(sport)}
-                        className={checked ? "border-amber-500 bg-amber-500" : ""}
+                        className={checked ? "border-brand bg-brand" : ""}
                       />
                       <span className={checked ? "font-medium" : ""}>{sport}</span>
                     </label>
@@ -622,7 +622,7 @@ export function StudentEventsClient({
               type="button"
               size="sm"
               disabled={isPending || allSelectedSports.length === 0 || !waiverAccepted}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold min-w-[140px]"
+              className="bg-brand hover:bg-brand/90 text-brand-foreground font-semibold min-w-[140px]"
               onClick={handleSportsRegister}
             >
               {isPending ? "Submitting..." : (

@@ -280,7 +280,7 @@ export function MeetingsClient({ meetings }: { meetings: MeetingRow[] }) {
           <DialogHeader>
             <DialogTitle className="text-sm font-semibold">Edit Meeting</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-3 py-2">
+          <form key={editingMeeting?.id ?? "none"} onSubmit={handleUpdate} className="space-y-3 py-2">
             <div className="space-y-1">
               <label className="text-xs font-medium">Meeting Title</label>
               <Input name="title" defaultValue={editingMeeting?.title} required className="h-8 text-xs" />

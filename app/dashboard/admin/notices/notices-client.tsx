@@ -336,7 +336,7 @@ export function NoticesClient({
       <Dialog open={!!editingNotice} onOpenChange={(open) => !open && setEditingNotice(null)}>
         <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Edit Entry</DialogTitle></DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-4 py-4">
+          <form key={editingNotice?.id ?? "none"} onSubmit={handleUpdate} className="space-y-4 py-4">
             <input type="hidden" name="section" value={activeSection} />
             <input type="hidden" name="existing_image_url" value={editingNotice?.image_url || ""} />
 

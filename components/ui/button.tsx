@@ -1,3 +1,4 @@
+import { isValidElement } from "react"
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
@@ -43,14 +44,33 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  asChild = false,
+  render,
+  nativeButton,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    /** Radix-style alias: render the single child element (e.g. <Link>) as the button. */
+    asChild?: boolean
+  }) {
+  // Support `asChild` by forwarding the child element to Base UI's `render` prop.
+  if (asChild && isValidElement(children)) {
+    render = children as React.ReactElement
+    children = undefined
+  }
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      render={render}
+      // A custom render element (Link, <a>, …) is not a native <button>.
+      nativeButton={nativeButton ?? !render}
       {...props}
-    />
+    >
+      {children}
+    </ButtonPrimitive>
   )
 }
 

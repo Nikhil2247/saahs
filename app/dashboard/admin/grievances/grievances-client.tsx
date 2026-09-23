@@ -232,7 +232,7 @@ export function GrievancesClient({
           <DialogHeader>
             <DialogTitle>Update Grievance Status</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-4 py-4">
+          <form key={editingGrievance?.id ?? "none"} onSubmit={handleUpdate} className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
               <select name="status" defaultValue={editingGrievance?.status} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">

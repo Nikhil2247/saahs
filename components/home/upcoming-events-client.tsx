@@ -198,7 +198,7 @@ export function UpcomingEventsClient({
                     <Badge
                       className={`border-none text-xs font-semibold shadow ${
                         isSports
-                          ? "bg-amber-500 text-white"
+                          ? "bg-brand text-brand-foreground"
                           : "bg-brand text-brand-foreground"
                       }`}
                     >
@@ -220,7 +220,7 @@ export function UpcomingEventsClient({
                       <span
                         className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 ${
                           isSports
-                            ? "bg-amber-500 text-white"
+                            ? "bg-brand text-brand-foreground"
                             : "bg-white/90 text-foreground"
                         }`}
                       >
@@ -284,7 +284,7 @@ export function UpcomingEventsClient({
                     ) : isSports ? (
                       <Button
                         size="sm"
-                        className="h-7 text-xs px-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+                        className="h-7 text-xs px-3 bg-brand hover:bg-brand/90 text-brand-foreground font-semibold"
                         asChild
                       >
                         <Link href="/sports">
@@ -356,7 +356,7 @@ export function UpcomingEventsClient({
             {detailsEvent?.category === "Sports" && !registeredIds.has(detailsEvent.id) && (
               <Button
                 size="sm"
-                className="bg-amber-500 hover:bg-amber-600 text-white"
+                className="bg-brand hover:bg-brand/90 text-brand-foreground"
                 onClick={() => { setDetailsEvent(null); openSportsDialog(detailsEvent) }}
               >
                 <Trophy className="mr-1 size-3.5" /> Register Now
@@ -376,8 +376,8 @@ export function UpcomingEventsClient({
         <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="flex size-9 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-300/50">
-                <Trophy className="size-5 text-amber-500" />
+              <div className="flex size-9 items-center justify-center rounded-xl bg-brand/15 border border-brand/30">
+                <Trophy className="size-5 text-brand" />
               </div>
               <div>
                 <DialogTitle className="text-sm font-bold leading-tight">
@@ -449,8 +449,8 @@ export function UpcomingEventsClient({
 
             {/* Team Games */}
             <div className="rounded-xl border border-border overflow-hidden">
-              <div className="px-3.5 py-2.5 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-b border-border flex items-center gap-2">
-                <Users className="size-3.5 text-amber-500 shrink-0" />
+              <div className="px-3.5 py-2.5 bg-gradient-to-r from-brand/5 to-brand/10 border-b border-border flex items-center gap-2">
+                <Users className="size-3.5 text-brand shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-foreground">TEAM games</p>
                   <p className="text-[10px] text-muted-foreground">Select any team events you wish to participate in</p>
@@ -464,14 +464,14 @@ export function UpcomingEventsClient({
                       key={sport}
                       className={`flex items-center gap-2.5 rounded-lg border px-3 py-2.5 cursor-pointer transition-all text-xs ${
                         checked
-                          ? "border-amber-400 bg-amber-500/8 text-amber-800 dark:text-amber-300"
+                          ? "border-brand/60 bg-brand/8 text-brand"
                           : "border-border bg-card hover:border-primary/30 hover:bg-muted/30 text-foreground"
                       }`}
                     >
                       <Checkbox
                         checked={checked}
                         onCheckedChange={() => toggleTeam(sport)}
-                        className={checked ? "border-amber-500 bg-amber-500" : ""}
+                        className={checked ? "border-brand bg-brand" : ""}
                       />
                       <span className={checked ? "font-medium" : ""}>{sport}</span>
                     </label>
@@ -555,7 +555,7 @@ export function UpcomingEventsClient({
               type="button"
               size="sm"
               disabled={isPending || allSelectedSports.length === 0 || !waiverAccepted}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-semibold min-w-[140px]"
+              className="bg-brand hover:bg-brand/90 text-brand-foreground font-semibold min-w-[140px]"
               onClick={handleSportsRegister}
             >
               {isPending ? "Submitting..." : (

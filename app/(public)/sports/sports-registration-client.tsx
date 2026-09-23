@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { registerForEvent, cancelEventRegistration } from "@/app/actions/events";
@@ -90,6 +90,29 @@ export function SportsRegistrationClient({
     },
   ]);
 
+  // Alert toast if student is not registered/logged in
+  useEffect(() => {
+    if (!isLoggedIn) {
+      toast.error("Student Registration Required", {
+        description: "You are not registered yet! Please sign in and complete student registration first to join or create teams.",
+        duration: 8000,
+        action: {
+          label: "Register Now",
+          onClick: () => router.push("/login"),
+        },
+      });
+    } else if (!profile.onboarding_complete) {
+      toast.error("Complete Student Profile", {
+        description: "Your student profile is incomplete. Please finish your student registration details first before participating!",
+        duration: 8000,
+        action: {
+          label: "Complete Now",
+          onClick: () => router.push("/onboarding"),
+        },
+      });
+    }
+  }, [isLoggedIn, profile.onboarding_complete, router]);
+
   // Waiver
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [waiverExpanded, setWaiverExpanded] = useState(false);
@@ -132,12 +155,25 @@ export function SportsRegistrationClient({
 
   const handleSubmit = () => {
     if (!isLoggedIn) {
+      toast.error("Registration Required", {
+        description: "You are not registered! Please sign in and complete student registration first.",
+        action: {
+          label: "Register Now",
+          onClick: () => router.push("/login"),
+        },
+      });
       router.push("/login");
       return;
     }
 
     if (!profile.onboarding_complete) {
-      toast.error("Please complete your profile onboarding before registering.");
+      toast.error("Complete Profile First", {
+        description: "Please complete your student profile onboarding before registering for sports events.",
+        action: {
+          label: "Complete Profile",
+          onClick: () => router.push("/onboarding"),
+        },
+      });
       router.push("/onboarding");
       return;
     }
@@ -230,28 +266,27 @@ export function SportsRegistrationClient({
           });
 
           // Add to live teams roster
-          setAllTeamsBySport((prev) => {
-            const copy = [...prev];
-            const group = copy.find((g) => g.sport === selectedTeamSport);
-            if (group) {
-              group.teams = [
-                ...group.teams,
-                {
-                  id: Date.now(),
-                  teamName: teamName.trim(),
-                  captain: {
-                    name: profile.full_name || "Captain",
-                    department: profile.department || profile.course || undefined,
-                    rollNumber: profile.roll_number || undefined,
-                    phone: captainPhone || undefined,
-                  },
-                  members: squadRoster,
-                  registeredAt: new Date().toISOString(),
-                },
-              ];
-            }
-            return copy;
-          });
+          // Build the new team outside the updater and update immutably, so a
+          // double-invoked updater (React Strict Mode) can't append it twice.
+          const newTeam = {
+            id: Date.now(),
+            teamName: teamName.trim(),
+            captain: {
+              name: profile.full_name || "Captain",
+              department: profile.department || profile.course || undefined,
+              rollNumber: profile.roll_number || undefined,
+              phone: captainPhone || undefined,
+            },
+            members: squadRoster,
+            registeredAt: new Date().toISOString(),
+          };
+          setAllTeamsBySport((prev) =>
+            prev.map((g) =>
+              g.sport === selectedTeamSport && !g.teams.some((t) => t.id === newTeam.id)
+                ? { ...g, teams: [...g.teams, newTeam] }
+                : g
+            )
+          );
           setActiveRosterSport(selectedTeamSport);
 
           toast.success("🎉 Team Registered Successfully!", {
@@ -281,16 +316,16 @@ export function SportsRegistrationClient({
   return (
     <div className="pb-20">
       {/* ── Hero Banner ──────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-amber-500/10 via-background to-background pt-12 pb-16">
+      <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-brand/10 via-background to-background pt-12 pb-16">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col items-center text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-4 shadow-sm">
-              <Trophy className="size-3.5 text-amber-500" /> SAAHS Annual Sports Festival 2026
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-3.5 py-1 text-xs font-semibold text-brand mb-4 shadow-sm">
+              <Trophy className="size-3.5 text-brand" /> SAAHS Annual Sports Festival 2026
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground max-w-3xl leading-tight">
               Unleash the Champion Within.{" "}
-              <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+              <span className="heading-underline heading-underline-brand text-brand">
                 Create Your Squad
               </span>
             </h1>
@@ -303,7 +338,7 @@ export function SportsRegistrationClient({
             {/* Quick stats pills */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-medium">
               <div className="flex items-center gap-2 rounded-xl border border-border bg-card/60 px-4 py-2.5 shadow-sm">
-                <Calendar className="size-4 text-amber-500" />
+                <Calendar className="size-4 text-brand" />
                 <span>
                   {new Date(event.schedule).toLocaleDateString(undefined, {
                     weekday: "short",
@@ -314,11 +349,11 @@ export function SportsRegistrationClient({
                 </span>
               </div>
               <div className="flex items-center gap-2 rounded-xl border border-border bg-card/60 px-4 py-2.5 shadow-sm">
-                <Clock className="size-4 text-amber-500" />
+                <Clock className="size-4 text-brand" />
                 <span>Starts 9:00 AM IST</span>
               </div>
               <div className="flex items-center gap-2 rounded-xl border border-border bg-card/60 px-4 py-2.5 shadow-sm">
-                <MapPin className="size-4 text-amber-500" />
+                <MapPin className="size-4 text-brand" />
                 <span>{event.venue || "PGIMER Sports Complex, Chandigarh"}</span>
               </div>
             </div>
@@ -330,16 +365,16 @@ export function SportsRegistrationClient({
       <div className="mx-auto max-w-6xl px-4 mt-10">
         {/* If already registered, show registration pass / confirmation */}
         {isRegistered && currentReg && (
-          <div className="mb-10 overflow-hidden rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-500/5 via-card to-background p-6 sm:p-8 shadow-xl">
+          <div className="mb-10 overflow-hidden rounded-2xl border-2 border-brand/40 bg-gradient-to-br from-brand/5 via-card to-background p-6 sm:p-8 shadow-xl">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-brand text-brand-foreground shadow-lg">
                   <CheckCircle2 className="size-7" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-foreground">You Are Registered!</h2>
-                    <Badge className="bg-emerald-500 text-white border-none text-xs">
+                    <Badge className="bg-brand text-brand-foreground border-none text-xs">
                       Confirmed
                     </Badge>
                   </div>
@@ -371,9 +406,9 @@ export function SportsRegistrationClient({
                     {(currentReg.sport_choices || []).map((s: string) => (
                       <Badge
                         key={s}
-                        className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 px-3 py-1 text-xs font-semibold"
+                        className="bg-brand/10 text-brand border border-brand/30 px-3 py-1 text-xs font-semibold"
                       >
-                        <Trophy className="size-3 mr-1 text-amber-500" />
+                        <Trophy className="size-3 mr-1 text-brand" />
                         {s}
                       </Badge>
                     ))}
@@ -381,13 +416,13 @@ export function SportsRegistrationClient({
                 </div>
 
                 {currentReg.team_name && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+                  <div className="rounded-xl border border-brand/30 bg-brand/5 p-4">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-brand">
                         Registered Team
                       </span>
                       {currentReg.is_captain && (
-                        <Badge className="bg-amber-500 text-white text-[10px] font-bold border-none">
+                        <Badge className="bg-brand text-brand-foreground text-[10px] font-bold border-none">
                           <Crown className="size-3 mr-1" /> You are Captain
                         </Badge>
                       )}
@@ -411,7 +446,7 @@ export function SportsRegistrationClient({
                       >
                         <div className="flex items-center gap-2">
                           {member.is_captain ? (
-                            <Crown className="size-3.5 text-amber-500 shrink-0" />
+                            <Crown className="size-3.5 text-brand shrink-0" />
                           ) : (
                             <span className="text-[10px] font-mono font-bold text-muted-foreground">
                               #{idx + 1}
@@ -420,7 +455,7 @@ export function SportsRegistrationClient({
                           <span className="font-semibold text-foreground">
                             {member.name}
                             {member.is_captain && (
-                              <span className="ml-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                              <span className="ml-1.5 text-[10px] text-brand font-bold">
                                 (Captain)
                               </span>
                             )}
@@ -460,7 +495,7 @@ export function SportsRegistrationClient({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Users className="size-4 text-amber-500" />
+                <Users className="size-4 text-brand" />
                 Team Events (Create Squad as Captain)
               </button>
               <button
@@ -472,22 +507,22 @@ export function SportsRegistrationClient({
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Zap className="size-4 text-blue-500" />
+                <Zap className="size-4 text-brand" />
                 Solo Events (Individual)
               </button>
             </div>
 
             {/* If Not Logged In Notice */}
             {!isLoggedIn && (
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="rounded-2xl border border-brand/30 bg-brand/10 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <Info className="size-5 text-amber-500 shrink-0" />
+                  <Info className="size-5 text-brand shrink-0" />
                   <p className="text-xs sm:text-sm text-foreground">
-                    Please <strong>Sign In with Google</strong> to register your team or solo sports.
+                    You are not registered yet. Please <strong>Sign In with Google</strong> to register your team or solo sports.
                   </p>
                 </div>
-                <Button asChild size="sm" className="bg-amber-500 hover:bg-amber-600 text-white font-bold shrink-0">
-                  <Link href="/login">Sign In with Google</Link>
+                <Button asChild size="sm" className="bg-brand hover:bg-brand/90 text-brand-foreground font-bold shrink-0">
+                  <Link href="/login">Sign In / Register</Link>
                 </Button>
               </div>
             )}
@@ -498,7 +533,7 @@ export function SportsRegistrationClient({
                 {/* 1. Sport Selection */}
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand/15 text-brand font-bold text-xs">
                       1
                     </div>
                     <h3 className="text-base font-bold text-foreground">Select Team Sport</h3>
@@ -515,11 +550,11 @@ export function SportsRegistrationClient({
                           onClick={() => setSelectedTeamSport(sport)}
                           className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
                             isSelected
-                              ? "border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20"
+                              ? "border-brand bg-brand/10 ring-2 ring-brand/20 shadow-xs"
                               : "border-border bg-background hover:border-border/80 hover:bg-muted/40"
                           }`}
                         >
-                          <span className={`text-xs font-bold ${isSelected ? "text-amber-600 dark:text-amber-400" : "text-foreground"}`}>
+                          <span className={`text-xs font-bold ${isSelected ? "text-brand" : "text-foreground"}`}>
                             {sport}
                           </span>
                           <span className="text-[10px] text-muted-foreground mt-1">
@@ -532,7 +567,7 @@ export function SportsRegistrationClient({
 
                   {activeSportConfig && (
                     <div className="mt-4 rounded-xl border border-border bg-muted/30 p-3.5 flex items-start gap-2.5 text-xs text-muted-foreground">
-                      <Info className="size-4 text-amber-500 shrink-0 mt-0.5" />
+                      <Info className="size-4 text-brand shrink-0 mt-0.5" />
                       <div>
                         <strong className="text-foreground font-semibold">{selectedTeamSport}: </strong>
                         {activeSportConfig.description} (Min {activeSportConfig.minPlayers} players, max {activeSportConfig.maxPlayers} including reserves).
@@ -544,7 +579,7 @@ export function SportsRegistrationClient({
                 {/* 2. Team Name */}
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand/15 text-brand font-bold text-xs">
                       2
                     </div>
                     <div>
@@ -567,22 +602,22 @@ export function SportsRegistrationClient({
                 </div>
 
                 {/* 3. Team Captain (The Creator) */}
-                <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 via-card to-background p-6 shadow-sm">
+                <div className="rounded-2xl border border-brand/30 bg-gradient-to-r from-brand/5 via-card to-background p-6 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-xs">
+                      <div className="flex size-7 items-center justify-center rounded-lg bg-brand text-brand-foreground font-bold text-xs">
                         3
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
-                          Team Captain <Crown className="size-4 text-amber-500" />
+                          Team Captain <Crown className="size-4 text-brand" />
                         </h3>
                         <p className="text-xs text-muted-foreground">
                           As the creator of this team, you are designated as the Captain
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-amber-500 text-white text-[11px] font-bold border-none">
+                    <Badge className="bg-brand text-brand-foreground text-[11px] font-bold border-none">
                       Captain (You)
                     </Badge>
                   </div>
@@ -625,7 +660,7 @@ export function SportsRegistrationClient({
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                      <div className="flex size-7 items-center justify-center rounded-lg bg-brand/15 text-brand font-bold text-xs">
                         4
                       </div>
                       <div>
@@ -637,8 +672,8 @@ export function SportsRegistrationClient({
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs px-2.5 py-1 font-semibold">
-                        <Users className="size-3 mr-1 text-amber-500" />
+                      <Badge variant="outline" className="text-xs px-2.5 py-1 font-semibold border-brand/30 text-brand">
+                        <Users className="size-3 mr-1 text-brand" />
                         Total Squad: {totalSquadCount}{" "}
                         {activeSportConfig && (
                           <span className="text-muted-foreground font-normal ml-1">
@@ -661,9 +696,9 @@ export function SportsRegistrationClient({
                   {/* List of squad rows */}
                   <div className="space-y-3">
                     {/* Captain Row (Locked) */}
-                    <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs">
+                    <div className="flex items-center justify-between rounded-xl border border-brand/30 bg-brand/5 px-4 py-3 text-xs">
                       <div className="flex items-center gap-2.5">
-                        <Crown className="size-4 text-amber-500" />
+                        <Crown className="size-4 text-brand" />
                         <div>
                           <p className="font-bold text-foreground">
                             {profile.full_name || "Captain (You)"}
@@ -673,7 +708,7 @@ export function SportsRegistrationClient({
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-none text-[10px] font-bold">
+                      <Badge className="bg-brand/15 text-brand border-none text-[10px] font-bold">
                         Player 1 (Captain)
                       </Badge>
                     </div>
@@ -686,7 +721,7 @@ export function SportsRegistrationClient({
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                            <User className="size-3.5 text-primary" /> Player #{index + 2}
+                            <User className="size-3.5 text-brand" /> Player #{index + 2}
                           </span>
                           {teamMembers.length > 1 && (
                             <button
@@ -748,7 +783,7 @@ export function SportsRegistrationClient({
               <div className="space-y-6">
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand/15 text-brand font-bold text-xs">
                       1
                     </div>
                     <div>
@@ -767,14 +802,14 @@ export function SportsRegistrationClient({
                           key={sport}
                           className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
                             checked
-                              ? "border-blue-500 bg-blue-500/10 text-blue-800 dark:text-blue-300 font-semibold"
+                              ? "border-brand bg-brand/10 text-brand font-semibold shadow-xs"
                               : "border-border bg-background hover:bg-muted/40 text-foreground"
                           }`}
                         >
                           <Checkbox
                             checked={checked}
                             onCheckedChange={() => toggleSolo(sport)}
-                            className={checked ? "border-blue-500 bg-blue-500" : ""}
+                            className={checked ? "border-brand bg-brand text-brand-foreground" : ""}
                           />
                           <span className="text-xs">{sport}</span>
                         </label>
@@ -786,7 +821,7 @@ export function SportsRegistrationClient({
                 {/* Solo Participant details */}
                 <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand/15 text-brand font-bold text-xs">
                       2
                     </div>
                     <div>
@@ -837,7 +872,7 @@ export function SportsRegistrationClient({
                 className="w-full flex items-center justify-between p-4 bg-muted/30 hover:bg-muted/50 transition-colors text-left"
               >
                 <div className="flex items-center gap-2.5">
-                  <AlertTriangle className="size-4 text-amber-500 shrink-0" />
+                  <ShieldCheck className="size-4 text-brand shrink-0" />
                   <span className="text-xs sm:text-sm font-bold text-foreground">
                     Tournament Rules, Terms &amp; Liability Waiver
                   </span>
@@ -884,7 +919,7 @@ export function SportsRegistrationClient({
                 size="lg"
                 onClick={handleSubmit}
                 disabled={isPending || !waiverAccepted}
-                className="w-full h-12 text-sm sm:text-base font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/25"
+                className="w-full h-12 text-sm sm:text-base font-bold bg-brand hover:bg-brand/90 text-brand-foreground shadow-lg shadow-brand/25"
               >
                 {isPending ? (
                   "Submitting Registration..."
@@ -906,7 +941,7 @@ export function SportsRegistrationClient({
             {/* Live Registration Summary Card */}
             <div className="rounded-2xl border border-border bg-card p-5 shadow-sm space-y-4">
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Sparkles className="size-3.5 text-amber-500" /> Registration Summary
+                <Sparkles className="size-3.5 text-brand" /> Registration Summary
               </h4>
 
               <div className="space-y-3 text-xs">
@@ -919,7 +954,7 @@ export function SportsRegistrationClient({
                   <>
                     <div className="flex justify-between py-1.5 border-b border-border/60">
                       <span className="text-muted-foreground">Team Sport:</span>
-                      <span className="font-bold text-amber-600 dark:text-amber-400">
+                      <span className="font-bold text-brand">
                         {selectedTeamSport}
                       </span>
                     </div>
@@ -961,16 +996,16 @@ export function SportsRegistrationClient({
 
                 <div className="flex justify-between py-1.5">
                   <span className="text-muted-foreground">Registration Fee:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Free / Member</span>
+                  <span className="font-bold text-brand">Free / Member</span>
                 </div>
               </div>
             </div>
 
             {/* Guide to Team Player Composition (Poster) */}
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+            <div className="rounded-2xl border border-brand/30 bg-brand/5 p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Trophy className="size-4 text-amber-500" />
-                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                <Trophy className="size-4 text-brand" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand">
                   Team Player Composition Guide
                 </h4>
               </div>
@@ -993,7 +1028,7 @@ export function SportsRegistrationClient({
                           <td className="py-1.5 px-2.5 font-medium text-foreground">{sport}</td>
                           <td className="py-1.5 px-2 text-center font-mono">{c.activePlayers}</td>
                           <td className="py-1.5 px-2 text-center font-mono">{c.substitutesAllowed}</td>
-                          <td className="py-1.5 px-2 text-center font-mono font-bold text-amber-600 dark:text-amber-400">
+                          <td className="py-1.5 px-2 text-center font-mono font-bold text-brand">
                             {c.maxPlayers}
                           </td>
                         </tr>
@@ -1007,19 +1042,19 @@ export function SportsRegistrationClient({
             {/* Tournament Rules / Highlights Card */}
             <div className="rounded-2xl border border-border bg-muted/20 p-5 space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                <Trophy className="size-3.5 text-amber-500" /> Captain Responsibilities
+                <Trophy className="size-3.5 text-brand" /> Captain Responsibilities
               </h4>
               <ul className="text-xs text-muted-foreground space-y-2 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="size-3.5 text-brand shrink-0 mt-0.5" />
                   <span>The Captain registers the team name and squad roster.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="size-3.5 text-brand shrink-0 mt-0.5" />
                   <span>Captain receives schedule alerts, fixture drawings, and match slot timings.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="size-3.5 text-brand shrink-0 mt-0.5" />
                   <span>Ensures squad is present at venue 20 minutes before kickoff / toss.</span>
                 </li>
               </ul>
@@ -1047,11 +1082,11 @@ export function SportsRegistrationClient({
         <section className="mt-16 pt-10 border-t border-border">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
             <div>
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 mb-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 border border-brand/20 px-3 py-1 text-xs font-bold text-brand mb-2">
                 <Trophy className="size-3.5" /> Tournament Squads
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Registered Teams <span className="text-amber-500">Per Sport</span>
+                Registered Teams <span className="text-brand">Per Sport</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Explore the participating teams registered across allied health departments and their captains
@@ -1072,7 +1107,7 @@ export function SportsRegistrationClient({
                   onClick={() => setActiveRosterSport(sport)}
                   className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                     isSelected
-                      ? "bg-amber-500 text-white shadow-md shadow-amber-500/20"
+                      ? "bg-brand text-brand-foreground shadow-md shadow-brand/20"
                       : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
@@ -1102,7 +1137,7 @@ export function SportsRegistrationClient({
                   </p>
                   <Button
                     size="sm"
-                    className="mt-4 bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs"
+                    className="mt-4 bg-brand hover:bg-brand/90 text-brand-foreground font-semibold text-xs"
                     onClick={() => {
                       setSelectedTeamSport(activeRosterSport as TeamSport);
                       setRegMode("team");
@@ -1120,7 +1155,7 @@ export function SportsRegistrationClient({
                 {teams.map((team, idx) => (
                   <div
                     key={team.id || idx}
-                    className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm hover:border-amber-500/40 hover:shadow-md transition-all"
+                    className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm hover:border-brand/40 hover:shadow-md transition-all"
                   >
                     <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-3">
                       <div>
@@ -1131,17 +1166,17 @@ export function SportsRegistrationClient({
                           {team.teamName}
                         </h4>
                       </div>
-                      <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[10px] font-bold">
+                      <Badge className="bg-brand/10 text-brand border border-brand/30 text-[10px] font-bold">
                         {team.members.length > 0 ? `${team.members.length} Players` : "Team"}
                       </Badge>
                     </div>
 
                     {/* Captain details */}
-                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 flex items-center justify-between text-xs">
+                    <div className="rounded-xl border border-brand/20 bg-brand/5 p-3 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2.5">
-                        <Crown className="size-4 text-amber-500 shrink-0" />
+                        <Crown className="size-4 text-brand shrink-0" />
                         <div>
-                          <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 block leading-tight">
+                          <span className="text-[10px] uppercase font-bold text-brand block leading-tight">
                             Team Captain
                           </span>
                           <span className="font-bold text-foreground">
@@ -1168,7 +1203,7 @@ export function SportsRegistrationClient({
                             >
                               <div className="flex items-center gap-2">
                                 {member.is_captain ? (
-                                  <Crown className="size-3 text-amber-500 shrink-0" />
+                                  <Crown className="size-3 text-brand shrink-0" />
                                 ) : (
                                   <span className="text-[10px] font-mono text-muted-foreground">
                                     {mIdx + 1}
@@ -1177,7 +1212,7 @@ export function SportsRegistrationClient({
                                 <span className="font-medium text-foreground">
                                   {member.name}
                                   {member.is_captain && (
-                                    <span className="text-[9px] text-amber-600 font-bold ml-1">
+                                    <span className="text-[9px] text-brand font-bold ml-1">
                                       (C)
                                     </span>
                                   )}

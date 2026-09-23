@@ -144,7 +144,7 @@ export function AdminEventRegistrationsFullClient({
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
               Registrations — {event.title}
             </h1>
-            <Badge className="bg-amber-500 text-white text-xs border-none font-semibold">
+            <Badge className="bg-brand text-brand-foreground text-xs border-none font-semibold">
               <Trophy className="size-3 mr-1" /> {event.category}
             </Badge>
           </div>
@@ -189,8 +189,8 @@ export function AdminEventRegistrationsFullClient({
           </p>
         </div>
 
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+        <div className="rounded-xl border border-brand/30 bg-brand/5 p-4">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-brand">
             Total Squads / Teams Created
           </span>
           <p className="text-2xl font-extrabold text-foreground mt-1">
@@ -228,7 +228,7 @@ export function AdminEventRegistrationsFullClient({
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Users className="size-3.5 text-amber-500" />
+          <Users className="size-3.5 text-brand" />
           Teams Per Sport ({totalTeams})
         </button>
         <button
@@ -266,7 +266,7 @@ export function AdminEventRegistrationsFullClient({
               onClick={() => setSelectedSportFilter("ALL")}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                 selectedSportFilter === "ALL"
-                  ? "bg-amber-500 text-white shadow-sm"
+                  ? "bg-brand text-brand-foreground shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
@@ -281,7 +281,7 @@ export function AdminEventRegistrationsFullClient({
                   onClick={() => setSelectedSportFilter(g.sport)}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                     selectedSportFilter === g.sport
-                      ? "bg-amber-500 text-white shadow-sm"
+                      ? "bg-brand text-brand-foreground shadow-sm"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
@@ -300,7 +300,7 @@ export function AdminEventRegistrationsFullClient({
                 {/* Sport Section Header */}
                 <div className="bg-muted/40 px-5 py-3.5 border-b border-border flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-xs">
+                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand text-brand-foreground font-bold text-xs">
                       <Trophy className="size-3.5" />
                     </div>
                     <div>
@@ -325,7 +325,7 @@ export function AdminEventRegistrationsFullClient({
                       {group.teams.map((team, idx) => (
                         <div
                           key={team.id || idx}
-                          className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/5 via-card to-background p-4 space-y-3"
+                          className="rounded-xl border border-brand/30 bg-gradient-to-br from-brand/5 via-card to-background p-4 space-y-3"
                         >
                           {/* Team Header */}
                           <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
@@ -342,7 +342,7 @@ export function AdminEventRegistrationsFullClient({
                                 Registered: {new Date(team.registeredAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <Badge className="bg-amber-500 text-white text-[10px] font-bold border-none">
+                            <Badge className="bg-brand text-brand-foreground text-[10px] font-bold border-none">
                               {team.members.length > 0 ? `${team.members.length} Players` : "Team"}
                             </Badge>
                           </div>
@@ -350,9 +350,9 @@ export function AdminEventRegistrationsFullClient({
                           {/* Captain Info Card */}
                           <div className="rounded-lg border border-border bg-card p-2.5 flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
-                              <Crown className="size-4 text-amber-500 shrink-0" />
+                              <Crown className="size-4 text-brand shrink-0" />
                               <div>
-                                <span className="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400 block">
+                                <span className="text-[10px] uppercase font-bold text-brand block">
                                   Captain
                                 </span>
                                 <span className="font-bold text-foreground">
@@ -388,7 +388,7 @@ export function AdminEventRegistrationsFullClient({
                                   >
                                     <div className="flex items-center gap-2">
                                       {member.is_captain ? (
-                                        <Crown className="size-3 text-amber-500 shrink-0" />
+                                        <Crown className="size-3 text-brand shrink-0" />
                                       ) : (
                                         <span className="text-[10px] font-mono text-muted-foreground">
                                           {mIdx + 1}
@@ -397,7 +397,7 @@ export function AdminEventRegistrationsFullClient({
                                       <span className="font-medium text-foreground">
                                         {member.name}
                                         {member.is_captain && (
-                                          <span className="text-[9px] text-amber-600 font-bold ml-1">
+                                          <span className="text-[9px] text-brand font-bold ml-1">
                                             (C)
                                           </span>
                                         )}
@@ -532,7 +532,7 @@ export function AdminEventRegistrationsFullClient({
                             </span>
                             <div className="flex items-center gap-1">
                               {reg.is_captain && (
-                                <Badge className="text-[8px] px-1 py-0 bg-amber-500 text-white font-bold border-none">
+                                <Badge className="text-[8px] px-1 py-0 bg-brand text-brand-foreground font-bold border-none">
                                   <Crown className="size-2 mr-0.5" /> Captain
                                 </Badge>
                               )}
@@ -555,7 +555,7 @@ export function AdminEventRegistrationsFullClient({
                           {reg.sport_choices.map((s) => (
                             <Badge
                               key={s}
-                              className="text-[9px] px-1.5 py-0 bg-amber-500/10 text-amber-700 border border-amber-200"
+                              className="text-[9px] px-1.5 py-0 bg-brand/10 text-brand border border-brand/30"
                             >
                               {s}
                             </Badge>

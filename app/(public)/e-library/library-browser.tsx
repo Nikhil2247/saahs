@@ -219,9 +219,9 @@ export function LibraryBrowser({ initialFolders }: { initialFolders: Folder[] })
                 <button
                   key={f.id}
                   onClick={() => openFolderView(f)}
-                  className="group text-left rounded-xl border border-border bg-card p-4 transition-all hover:border-amber-400/60 hover:shadow-md flex items-center gap-3"
+                  className="group text-left rounded-xl border border-border bg-card p-4 transition-all hover:border-brand/60 hover:shadow-md flex items-center gap-3"
                 >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 group-hover:bg-amber-500/20 transition-colors">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand group-hover:bg-brand/20 transition-colors">
                     <FolderOpen className="size-5" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
@@ -230,7 +230,7 @@ export function LibraryBrowser({ initialFolders }: { initialFolders: Folder[] })
                       Added {new Date(f.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <ChevronRight className="size-4 text-muted-foreground shrink-0 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+                  <ChevronRight className="size-4 text-muted-foreground shrink-0 group-hover:text-brand group-hover:translate-x-0.5 transition-all" />
                 </button>
               ))}
             </div>
@@ -248,9 +248,9 @@ export function LibraryBrowser({ initialFolders }: { initialFolders: Folder[] })
         {Breadcrumb}
 
         {/* Folder header bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-amber-500/5 border border-amber-500/20 rounded-xl px-4 py-3 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-brand/5 border border-brand/20 rounded-xl px-4 py-3 mb-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/15 text-brand">
               <FolderOpen className="size-4" />
             </div>
             <div className="min-w-0">

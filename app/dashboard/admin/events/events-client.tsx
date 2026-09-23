@@ -233,7 +233,7 @@ export function EventsClient({
                   <TableCell className="font-medium max-w-[200px] truncate py-2.5 text-xs">
                     <div className="flex items-center gap-1.5">
                       {event.event_type === "Sports" && (
-                        <Trophy className="size-3 text-amber-500 shrink-0" />
+                        <Trophy className="size-3 text-brand shrink-0" />
                       )}
                       {event.title}
                     </div>
@@ -243,7 +243,7 @@ export function EventsClient({
                       variant="outline"
                       className={`text-[10px] px-1.5 py-0 ${
                         event.event_type === "Sports"
-                          ? "bg-amber-500/10 text-amber-700 border-amber-300"
+                          ? "bg-brand/10 text-brand border-brand/30"
                           : ""
                       }`}
                     >
@@ -410,7 +410,7 @@ export function EventsClient({
                             </span>
                             <div className="flex items-center gap-1">
                               {reg.is_captain && (
-                                <Badge className="text-[8px] px-1 py-0 bg-amber-500 text-white font-bold border-none">
+                                <Badge className="text-[8px] px-1 py-0 bg-brand text-brand-foreground font-bold border-none">
                                   <Crown className="size-2 mr-0.5" /> Captain
                                 </Badge>
                               )}
@@ -434,7 +434,7 @@ export function EventsClient({
                             {reg.sport_choices.map((s) => (
                               <Badge
                                 key={s}
-                                className="text-[9px] px-1 py-0 bg-amber-500/10 text-amber-700 border border-amber-200"
+                                className="text-[9px] px-1 py-0 bg-brand/10 text-brand border border-brand/30"
                               >
                                 {s}
                               </Badge>
@@ -588,7 +588,7 @@ export function EventsClient({
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-4 py-4">
+          <form key={editingEvent?.id ?? "none"} onSubmit={handleUpdate} className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
               <Input

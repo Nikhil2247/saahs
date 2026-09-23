@@ -230,7 +230,7 @@ export function StudentLibraryClient({ initialFolders }: { initialFolders: Folde
                 onClick={() => openFolderView(f)}
                 className="p-3.5 border-border shadow-2xs hover:border-primary/40 hover:bg-secondary/20 transition-all cursor-pointer flex items-center gap-3"
               >
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                   <FolderOpen className="size-4" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -252,7 +252,7 @@ export function StudentLibraryClient({ initialFolders }: { initialFolders: Folde
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border/70 pb-3">
             <div>
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <FolderOpen className="size-4 text-amber-600" />
+                <FolderOpen className="size-4 text-brand" />
                 <span>{openFolder.name}</span>
               </h3>
               <p className="text-[11px] text-muted-foreground">
