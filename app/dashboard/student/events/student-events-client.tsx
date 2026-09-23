@@ -209,7 +209,14 @@ export function StudentEventsClient({
             return (
               <Card
                 key={e.id}
-                className="overflow-hidden border-border shadow-2xs hover:border-primary/40 transition-all flex flex-col justify-between"
+                onClick={() => {
+                  if (isSports && !isRegistered && !isPast) {
+                    openSportsDialog(e);
+                  } else {
+                    setSelectedEvent(e);
+                  }
+                }}
+                className="overflow-hidden border-border shadow-2xs hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between cursor-pointer"
               >
                 <div>
                   {e.banner_url ? (
@@ -290,12 +297,12 @@ export function StudentEventsClient({
                   </div>
                 </div>
 
-                <div className="p-3.5 pt-0 border-t border-border/50 mt-2 flex items-center justify-between gap-2">
+                <div className="p-3.5 pt-0 border-t border-border/50 mt-2 flex items-center justify-between gap-2" onClick={(ev) => ev.stopPropagation()}>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 text-xs px-2"
-                    onClick={() => setSelectedEvent(e)}
+                    onClick={(ev) => { ev.stopPropagation(); setSelectedEvent(e); }}
                   >
                     <Info className="mr-1 size-3" /> Details
                   </Button>
@@ -307,7 +314,7 @@ export function StudentEventsClient({
                         variant="outline"
                         disabled={isCancelling}
                         className="h-7 text-xs px-2.5 font-medium border-emerald-300 text-emerald-700 bg-emerald-500/5 hover:bg-rose-500/10 hover:border-rose-300 hover:text-rose-700 transition-colors"
-                        onClick={() => handleCancel(e.id)}
+                        onClick={(ev) => { ev.stopPropagation(); handleCancel(e.id); }}
                       >
                         <CheckCircle2 className="mr-1 size-3 text-emerald-600" />
                         Registered
@@ -317,7 +324,7 @@ export function StudentEventsClient({
                         size="sm"
                         disabled={isPending}
                         className="h-7 text-xs px-2.5 font-semibold bg-amber-500 hover:bg-amber-600 text-white"
-                        onClick={() => openSportsDialog(e)}
+                        onClick={(ev) => { ev.stopPropagation(); openSportsDialog(e); }}
                       >
                         <Trophy className="mr-1 size-3" /> Register
                       </Button>
@@ -326,7 +333,7 @@ export function StudentEventsClient({
                         size="sm"
                         disabled={isPending}
                         className="h-7 text-xs px-2.5 font-medium"
-                        onClick={() => handleRegularRegister(e.id)}
+                        onClick={(ev) => { ev.stopPropagation(); handleRegularRegister(e.id); }}
                       >
                         Register
                       </Button>
