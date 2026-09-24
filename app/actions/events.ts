@@ -7,6 +7,35 @@ import { revalidatePath } from "next/cache";
 import { SPORTS_LIST, TEAM_SPORTS } from "@/lib/sports-constants";
 import type { TeamMember } from "@/types/database";
 
+/**
+ * Search registered SAAHS portal members by name, roll number, or department.
+ * Used for smart team member lookup during sports registration.
+ * Only returns onboarded, active portal members.
+ */
+export async function searchRegisteredMembers(query: string) {
+  if (!query || query.trim().length < 2) return { success: true, data: [] };
+
+  const supabase = createSupabaseAdminClient();
+  const q = query.trim();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, roll_number, department, course, batch_year, phone_number, institution")
+    .eq("onboarding_complete", true)
+    .or(`full_name.ilike.%${q}%,roll_number.ilike.%${q}%,department.ilike.%${q}%`)
+    .limit(10);
+
+  if (error) return { success: false, error: error.message, data: [] };
+  return { success: true, data: data || [] };
+}
+
+
+
+export interface MultiTeamEntry {
+  sport: string;
+  teamName: string;
+  members: TeamMember[]; // excludes captain — captain added server-side
+}
 
 export interface RegisterEventPayload {
   sportChoices?: string[];
@@ -17,6 +46,9 @@ export interface RegisterEventPayload {
   teamName?: string;
   isCaptain?: boolean;
   teamMembers?: TeamMember[];
+  /** New: unified multi-sport registration — solo choices + team entries */
+  multiTeams?: MultiTeamEntry[];
+  soloChoices?: string[];
 }
 
 /**
@@ -50,6 +82,78 @@ export async function registerForEvent(
     };
   }
 
+  // ── NEW: Unified multi-sport registration (solo + multiple teams) ─────────
+  if (payload.multiTeams !== undefined || payload.soloChoices !== undefined) {
+    const soloChoices = payload.soloChoices ?? [];
+    const teams = payload.multiTeams ?? [];
+
+    if (!payload.waiverAccepted) {
+      return { success: false, error: "You must accept the liability waiver to register." };
+    }
+    if (soloChoices.length === 0 && teams.length === 0) {
+      return { success: false, error: "Please select at least one event to register for." };
+    }
+
+    // Build flat team_members array with sport context for each team
+    const allTeamMembers: TeamMember[] = [];
+    for (const team of teams) {
+      // Captain entry for this team
+      allTeamMembers.push({
+        name: (profile as any).full_name || "Captain",
+        roll_number: (profile as any).roll_number || undefined,
+        department: (profile as any).department || (profile as any).course || undefined,
+        phone: payload.phoneNumber || (profile as any).phone_number || undefined,
+        is_captain: true,
+        is_portal_registered: true,
+        _sport: team.sport,
+        _team_name: team.teamName,
+      } as any);
+      // Other team members
+      for (const m of team.members) {
+        allTeamMembers.push({ ...m, _sport: team.sport, _team_name: team.teamName } as any);
+      }
+    }
+
+    const allSports = [...soloChoices, ...teams.map((t) => t.sport)];
+    const teamNamesStr = teams.map((t) => `${t.sport}: ${t.teamName}`).join(" | ") || null;
+
+    const multiInsert: Record<string, any> = {
+      event_id: eventId,
+      user_id: session.userId,
+      sport_choices: allSports,
+      waiver_accepted: true,
+      phone_number: payload.phoneNumber || (profile as any).phone_number || null,
+      is_captain: teams.length > 0,
+      team_name: teamNamesStr,
+      team_members: allTeamMembers.length > 0 ? allTeamMembers : undefined,
+    };
+
+    const { error: multiErr } = await supabase.from("event_registrations").insert(multiInsert as any);
+    if (multiErr) {
+      if (multiErr.code === "23505") {
+        return { success: false, error: "You are already registered for this event." };
+      }
+      // Fallback without team columns
+      if (multiErr.message?.includes("column") && multiErr.message?.includes("does not exist")) {
+        const { error: fbErr } = await supabase.from("event_registrations").insert({
+          event_id: eventId,
+          user_id: session.userId,
+          sport_choices: allSports,
+          waiver_accepted: true,
+          phone_number: payload.phoneNumber || (profile as any).phone_number || null,
+        } as any);
+        if (fbErr) return { success: false, error: fbErr.message };
+      } else {
+        return { success: false, error: multiErr.message };
+      }
+    }
+
+    revalidatePath("/sports");
+    revalidatePath("/dashboard/student/events");
+    return { success: true, registered: true };
+  }
+
+  // ── LEGACY: original single-sport / single-team path ──────────────────────
   // For sports events, waiver is mandatory
   if (payload.isSportsEvent && !payload.waiverAccepted) {
     return {
@@ -79,10 +183,10 @@ export async function registerForEvent(
     if (!captainAlreadyInList) {
       teamMembers = [
         {
-          name: profile.full_name || "Captain",
-          roll_number: profile.roll_number || undefined,
-          department: profile.department || profile.course || undefined,
-          phone: payload.phoneNumber || profile.phone_number || undefined,
+          name: (profile as any).full_name || "Captain",
+          roll_number: (profile as any).roll_number || undefined,
+          department: (profile as any).department || (profile as any).course || undefined,
+          phone: payload.phoneNumber || (profile as any).phone_number || undefined,
           is_captain: true,
         },
         ...teamMembers,
@@ -95,7 +199,7 @@ export async function registerForEvent(
     user_id: session.userId,
     sport_choices: payload.sportChoices ?? [],
     waiver_accepted: payload.waiverAccepted ?? false,
-    phone_number: payload.phoneNumber || profile.phone_number || null,
+    phone_number: payload.phoneNumber || (profile as any).phone_number || null,
   };
 
   if (isTeam) {
@@ -116,7 +220,7 @@ export async function registerForEvent(
         user_id: session.userId,
         sport_choices: payload.sportChoices ?? [],
         waiver_accepted: payload.waiverAccepted ?? false,
-        phone_number: payload.phoneNumber || profile.phone_number || null,
+        phone_number: payload.phoneNumber || (profile as any).phone_number || null,
       };
       const { error: retryErr } = await supabase.from("event_registrations").insert(fallbackInsert as any);
       insertError = retryErr;

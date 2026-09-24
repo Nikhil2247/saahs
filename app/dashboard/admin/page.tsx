@@ -27,6 +27,7 @@ import {
   Crown,
   BookMarked,
   Lock,
+  Camera,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -192,6 +193,14 @@ export default async function AdminDashboardPage() {
       badgeVariant: "secondary",
       description: "Recognized colleges & institutions directory",
     },
+    {
+      label: "Event Gallery",
+      href: "/dashboard/admin/gallery",
+      icon: Camera,
+      badge: "Media",
+      badgeVariant: "secondary",
+      description: "Upload & manage executed event photos & albums",
+    },
   ];
 
   // Filter modules per role
@@ -200,7 +209,7 @@ export default async function AdminDashboardPage() {
     if (isGovBody) return m.href !== "/dashboard/admin/users";
     if (isFacultyUser) return m.href === "/dashboard/admin/library";
     // Executive Body
-    return m.href === "/dashboard/admin/library";
+    return m.href === "/dashboard/admin/library" || m.href === "/dashboard/admin/gallery";
   });
 
   // ── Quick action buttons per role ───────────────────────────────────────────
@@ -210,6 +219,9 @@ export default async function AdminDashboardPage() {
   }
   if (canManageMembers(userRole)) {
     quickActions.push({ label: "Review Members", href: "/dashboard/admin/memberships", icon: Users });
+  }
+  if (isGovBody || isLeader) {
+    quickActions.push({ label: "Manage Gallery", href: "/dashboard/admin/gallery", icon: Camera });
   }
   if (!canPostNotices(userRole)) {
     quickActions.push({ label: "Browse E-Library", href: "/dashboard/admin/library", icon: BookOpen });

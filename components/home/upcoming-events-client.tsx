@@ -149,6 +149,10 @@ export function UpcomingEventsClient({
         {/* Section header */}
         <div className="mb-10 flex items-end justify-between">
           <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold text-brand mb-3">
+              <Calendar className="size-3.5" />
+              04. Upcoming Events
+            </span>
             <h2 className="text-3xl font-bold tracking-tight text-foreground">
               Upcoming <span className="text-brand">Events</span>
             </h2>

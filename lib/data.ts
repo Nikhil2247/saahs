@@ -314,12 +314,38 @@ export const officeBearers: OfficeBearer[] = [
   },
   {
     id: "OB-13",
-    name: "Lakshya",
+    name: "Lakshay Vans Labra",
     position: "Sports Secretary",
     department: "Audiology & Speech Language Pathology",
     email: "support@saahs.in",
     tenure: "2025 – 2026",
   },
+]
+
+export interface ExecutiveMember {
+  id: string
+  name: string
+  role: string
+  department: string
+  shortCode: string
+  email: string
+  tenure: string
+}
+
+export const departmentalRepresentatives: ExecutiveMember[] = [
+  { id: "DR-1", name: "BMLS Department Representative", role: "Departmental Representative (DR)", department: "Medical Laboratory Science (BMLS)", shortCode: "BMLS", email: "dr.bmls@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-2", name: "MRIT Department Representative", role: "Departmental Representative (DR)", department: "Medical Radiology & Imaging Technology", shortCode: "MRIT", email: "dr.mrit@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-3", name: "RTT Department Representative", role: "Departmental Representative (DR)", department: "Radiotherapy Technology", shortCode: "RTT", email: "dr.rtt@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-4", name: "OTT Department Representative", role: "Departmental Representative (DR)", department: "Operation Theatre Technology", shortCode: "OTT", email: "dr.ott@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-5", name: "MTP Department Representative", role: "Departmental Representative (DR)", department: "Medical Technology – Perfusionist", shortCode: "MTP", email: "dr.mtp@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-6", name: "EMS Department Representative", role: "Departmental Representative (DR)", department: "Embalming & Mortuary Science", shortCode: "EMS", email: "dr.ems@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-7", name: "BASLP Department Representative", role: "Departmental Representative (DR)", department: "Audiology & Speech-Language Pathology", shortCode: "BASLP", email: "dr.baslp@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-8", name: "MTDT Department Representative", role: "Departmental Representative (DR)", department: "Medical Technology – Dialysis Therapy", shortCode: "MTDT", email: "dr.mtdt@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-9", name: "Optometry Department Representative", role: "Departmental Representative (DR)", department: "Optometry", shortCode: "OPT", email: "dr.opt@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-10", name: "Physiotherapy Department Representative", role: "Departmental Representative (DR)", department: "Physiotherapy", shortCode: "PT", email: "dr.pt@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-11", name: "HIM Department Representative", role: "Departmental Representative (DR)", department: "Health Information Management", shortCode: "HIM", email: "dr.him@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-12", name: "Public Health Department Representative", role: "Departmental Representative (DR)", department: "Public Health", shortCode: "PH", email: "dr.ph@saahs.in", tenure: "2025 – 2026" },
+  { id: "DR-13", name: "MAAV Department Representative", role: "Departmental Representative (DR)", department: "Medical Animation & Audio-Visual", shortCode: "MAAV", email: "dr.maav@saahs.in", tenure: "2025 – 2026" },
 ]
 
 export const departments: Department[] = [
@@ -428,9 +454,9 @@ export const helpDeskCategories = [
 export const navLinks = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },
-  { label: "Leadership", href: "/leadership" },
-  { label: "Courses", href: "/departments" },
+  { label: "Leadership & Courses", href: "/leadership" },
   { label: "Sports Fest", href: "/sports" },
+  { label: "Event Gallery", href: "/gallery" },
   { label: "E-Library", href: "/e-library" },
   { label: "Help Desk", href: "/help-desk" },
   { label: "Notices", href: "/notices" },

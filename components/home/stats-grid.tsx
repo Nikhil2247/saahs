@@ -1,10 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Building2, Users, CalendarCheck, TrendingUp } from "lucide-react"
-import { stats } from "@/lib/data"
-
-const icons = [Building2, Users]
+import { Building2, Users, CalendarCheck, TrendingUp, Award } from "lucide-react"
 
 function useCountUp(target: number, active: boolean, duration = 1200) {
   const [value, setValue] = useState(0)
@@ -24,35 +21,15 @@ function useCountUp(target: number, active: boolean, duration = 1200) {
   return value
 }
 
-function StatCard({
-  icon: Icon,
-  value,
-  suffix,
-  label,
-  active,
-}: {
-  icon: typeof Building2
+interface StatItem {
+  label: string
+  sublabel: string
   value: number
   suffix: string
-  label: string
-  active: boolean
-}) {
-  const count = useCountUp(value, active)
-  return (
-    <div className="rounded-xl border border-border bg-card p-6 sm:p-8 transition-all hover:border-brand/40">
-      <div className="flex size-12 items-center justify-center rounded-lg bg-brand/10 text-brand">
-        <Icon className="size-6" />
-      </div>
-      <p className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground tabular-nums">
-        {count.toLocaleString("en-IN")}
-        {suffix}
-      </p>
-      <p className="mt-1.5 text-sm font-medium text-muted-foreground">{label}</p>
-    </div>
-  )
+  icon: typeof Building2
 }
 
-export function StatsGrid({ activeMemberCount }: { activeMemberCount: number }) {
+export function StatsGrid({ activeMemberCount = 450 }: { activeMemberCount?: number }) {
   const ref = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(false)
 
@@ -66,32 +43,71 @@ export function StatsGrid({ activeMemberCount }: { activeMemberCount: number }) 
           observer.disconnect()
         }
       },
-      { threshold: 0.3 },
+      { threshold: 0.2 },
     )
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
 
-  const liveStats = stats.map((s) =>
-    s.label === "Active Members" ? { ...s, value: activeMemberCount, suffix: "" } : s
-  )
+  const statItems: StatItem[] = [
+    {
+      label: "Registered Members",
+      sublabel: "Across PGIMER & Region",
+      value: 1200,
+      suffix: "+",
+      icon: Users,
+    },
+    {
+      label: "Active Members",
+      sublabel: "Verified on Portal",
+      value: Math.max(450, activeMemberCount),
+      suffix: "+",
+      icon: TrendingUp,
+    },
+    {
+      label: "PGIMER Disciplines",
+      sublabel: "Under SAAHS Umbrella",
+      value: 13,
+      suffix: "",
+      icon: Building2,
+    },
+    {
+      label: "APMS Founded",
+      sublabel: "34+ Years Legacy",
+      value: 1992,
+      suffix: "",
+      icon: CalendarCheck,
+    },
+  ]
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12">
-      <div
-        ref={ref}
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 max-w-4xl mx-auto dotted-grid rounded-2xl bg-card p-6 md:p-8 border border-border shadow-sm"
-      >
-        {liveStats.map((s, i) => (
-          <StatCard
-            key={s.label}
-            icon={icons[i] || Users}
-            value={s.value}
-            suffix={s.suffix}
-            label={s.label}
-            active={active}
-          />
-        ))}
+    <section className="border-b border-border bg-card/40 py-10 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-4">
+        <div
+          ref={ref}
+          className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-8"
+        >
+          {statItems.map((item) => {
+            const Icon = item.icon
+            const count = useCountUp(item.value, active)
+            return (
+              <div
+                key={item.label}
+                className="relative flex flex-col items-center rounded-2xl border border-border bg-card p-5 text-center shadow-xs transition-all hover:border-brand/30 hover:shadow-sm"
+              >
+                <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-brand/10 text-brand ring-1 ring-brand/20">
+                  <Icon className="size-5" />
+                </div>
+                <p className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl tabular-nums">
+                  {count.toLocaleString("en-IN")}
+                  {item.suffix}
+                </p>
+                <p className="mt-1 text-xs font-bold text-foreground">{item.label}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{item.sublabel}</p>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </section>
   )

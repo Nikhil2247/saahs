@@ -49,12 +49,20 @@ export default async function SportsPage() {
   }
 
   // Profile data & existing user registration
-  let profile = null;
-  let userRegistration = null;
+  let profile: {
+    full_name: string | null;
+    phone_number: string | null;
+    department: string | null;
+    course: string | null;
+    batch_year: string | null;
+    roll_number: string | null;
+    onboarding_complete: boolean;
+  } | null = null;
+  let userRegistration: any | null = null;
 
   if (session?.userId) {
     try {
-      const [{ data: prof }, { data: reg }] = await Promise.all([
+      const [profResult, regResult] = await Promise.all([
         adminSupabase
           .from("profiles")
           .select("full_name, phone_number, department, course, batch_year, roll_number, onboarding_complete")
@@ -69,12 +77,13 @@ export default async function SportsPage() {
           .maybeSingle(),
       ]);
 
-      profile = prof;
-      userRegistration = reg;
+      profile = (profResult.data as any) ?? null;
+      userRegistration = (regResult.data as any) ?? null;
     } catch (err) {
       console.error("Error fetching user sports profile:", err);
     }
   }
+
 
   // Fetch all registered teams grouped per sport
   let teamsBySport: any[] = [];

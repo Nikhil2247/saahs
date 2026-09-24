@@ -1,24 +1,4 @@
-import type { Metadata } from "next"
-import { PageHeader } from "@/components/page-header"
-import { DepartmentsGrid } from "./departments-grid"
+import LeadershipPage, { metadata } from "@/app/(public)/leadership/page"
 
-export const metadata: Metadata = {
-  title: "Courses & Disciplines | SAAHS",
-  description:
-    "Explore the 13 allied health science courses and disciplines represented by SAAHS at PGIMER Chandigarh.",
-}
-
-export default function DepartmentsPage() {
-  return (
-    <div>
-      <PageHeader
-        eyebrow="Programmes & Disciplines"
-        title="Allied Health Courses"
-        description="SAAHS represents thirteen specialized disciplines, each advancing a distinct field of allied health practice and education."
-      />
-      <div className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-        <DepartmentsGrid />
-      </div>
-    </div>
-  )
-}
+export { metadata }
+export default LeadershipPage

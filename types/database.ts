@@ -205,6 +205,10 @@ export interface TeamMember {
   department?: string;
   phone?: string;
   is_captain?: boolean;
+  /** True if this member is a registered SAAHS portal user (auto-filled from DB search) */
+  is_portal_registered?: boolean;
+  /** Profile UUID if member was found in the portal database */
+  profile_id?: string;
 }
 
 export interface EventRegistrationRow {
