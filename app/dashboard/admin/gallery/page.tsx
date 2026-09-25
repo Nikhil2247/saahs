@@ -82,7 +82,7 @@ function ImageDropzone({ label, multiple, files, previewUrls, onFilesChange, exi
           <span className="text-xs font-medium">
             Drop {multiple ? "images" : "image"} here or <span className="text-brand font-semibold">click to upload</span>
           </span>
-          <span className="text-[10px]">JPG, PNG, WebP — compressed & converted to WebP via Sharp</span>
+          <span className="text-[10px]">JPG, PNG, WebP supported</span>
         </div>
       </div>
 
@@ -192,7 +192,7 @@ function GalleryFormModal({ editing, onClose, onSaved }: GalleryFormProps) {
               {editing ? "Edit Event Gallery" : "Create Event Gallery"}
             </h3>
             <p className="text-xs text-muted-foreground">
-              Images are compressed & uploaded to MinIO automatically.
+              Add executed event photos to the public gallery.
             </p>
           </div>
           <button onClick={onClose} className="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
@@ -338,7 +338,7 @@ export default function GalleryManagerPage() {
             Gallery Manager
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Upload event photos — images are auto-compressed via Sharp and stored in MinIO.
+            Create event albums and publish executed event photos for SAAHS.
           </p>
         </div>
         <Button
