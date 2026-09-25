@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -60,7 +61,9 @@ import {
   SOLO_SPORTS,
   TEAM_SPORTS,
   TEAM_SPORTS_CONFIG,
+  splitRegistrationBySport,
   type TeamSport,
+  type SplitRegistration,
 } from "@/lib/sports-constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -545,6 +548,20 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
 
   const hasAnySelection = selectedSolos.size > 0 || confirmedTeams.length > 0;
 
+  // The registration row (freshly submitted or loaded from the DB on
+  // reload) stores every sport together — split it back per sport so solo
+  // events and each captained team render as separate entries, never merged.
+  const currentRegSplit = useMemo((): SplitRegistration | null => {
+    if (!currentReg) return null;
+    if (currentReg._solo_sports || currentReg._team_entries) {
+      return {
+        soloSports: currentReg._solo_sports ?? [],
+        teamEntries: currentReg._team_entries ?? [],
+      };
+    }
+    return splitRegistrationBySport(currentReg);
+  }, [currentReg]);
+
   // ── Submit ─────────────────────────────────────────────────────────────────
 
   const handleSubmit = () => {
@@ -669,11 +686,11 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {/* Solo events */}
-              {currentReg._solo_sports?.length > 0 && (
+              {currentRegSplit && currentRegSplit.soloSports.length > 0 && (
                 <div className="rounded-xl border border-border bg-muted/20 p-4">
                   <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider mb-2">Solo Events</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {currentReg._solo_sports.map((s: string) => (
+                    {currentRegSplit.soloSports.map((s: string) => (
                       <Badge key={s} className="bg-brand/10 text-brand border border-brand/30 text-[10px]">
                         <Zap className="size-2.5 mr-1" />{s}
                       </Badge>
@@ -682,11 +699,11 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
                 </div>
               )}
               {/* Team events */}
-              {currentReg._team_entries?.length > 0 && (
+              {currentRegSplit && currentRegSplit.teamEntries.length > 0 && (
                 <div className="rounded-xl border border-brand/30 bg-brand/5 p-4">
                   <p className="text-[10px] uppercase font-bold text-brand tracking-wider mb-2">Team Events (Captain)</p>
                   <div className="space-y-1">
-                    {currentReg._team_entries.map((t: MultiTeamEntry) => (
+                    {currentRegSplit.teamEntries.map((t) => (
                       <div key={t.sport} className="flex items-center gap-2 text-xs">
                         <Trophy className="size-3 text-brand" />
                         <span className="font-bold text-foreground">{t.sport}</span>

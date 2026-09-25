@@ -209,6 +209,10 @@ export interface TeamMember {
   is_portal_registered?: boolean;
   /** Profile UUID if member was found in the portal database */
   profile_id?: string;
+  /** Which sport this member's team belongs to (set for multi-sport registrations) */
+  _sport?: string;
+  /** The team name for that specific sport (set for multi-sport registrations) */
+  _team_name?: string;
 }
 
 export interface EventRegistrationRow {

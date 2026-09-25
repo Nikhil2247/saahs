@@ -26,8 +26,6 @@ import {
   Phone,
   Calendar,
   MapPin,
-  ShieldAlert,
-  Sparkles,
 } from "lucide-react";
 import type { EventRow, TeamMember } from "@/types/database";
 import type { EventRegistrationDetail } from "@/app/actions/admin/event-registrations";
@@ -185,73 +183,73 @@ export function AdminEventRegistrationsFullClient({
 
       {/* ── Metric Summary Cards ────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <span className="text-[11px] font-medium text-muted-foreground">
             Total Students Registered
           </span>
-          <p className="text-2xl font-extrabold text-foreground mt-1">
+          <p className="text-2xl font-bold text-foreground mt-1">
             {registrations.length}
           </p>
         </div>
 
-        <div className="rounded-xl border border-brand/30 bg-brand/5 p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-brand">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <span className="text-[11px] font-medium text-muted-foreground">
             Total Squads / Teams Created
           </span>
-          <p className="text-2xl font-extrabold text-foreground mt-1">
+          <p className="text-2xl font-bold text-foreground mt-1">
             {totalTeams}
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <span className="text-[11px] font-medium text-muted-foreground">
             Active Team Sports
           </span>
-          <p className="text-2xl font-extrabold text-foreground mt-1">
+          <p className="text-2xl font-bold text-foreground mt-1">
             {teamsBySport.filter((g) => g.isTeamSport).length}
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="rounded-lg border border-border bg-card p-4">
+          <span className="text-[11px] font-medium text-muted-foreground">
             Solo Event Categories
           </span>
-          <p className="text-2xl font-extrabold text-foreground mt-1">
+          <p className="text-2xl font-bold text-foreground mt-1">
             {soloSports.length}
           </p>
         </div>
       </div>
 
       {/* ── View Mode Tabs ──────────────────────────────────────────── */}
-      <div className="flex rounded-xl border border-border bg-muted/40 p-1 max-w-md">
+      <div className="flex rounded-lg border border-border bg-muted/30 p-1 max-w-md">
         <button
           type="button"
           onClick={() => setActiveTab("teams")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-colors ${
             activeTab === "teams"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <Users className="size-3.5 text-brand" />
+          <Users className="size-3.5" />
           Teams Per Sport ({totalTeams})
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("solo")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-colors ${
             activeTab === "solo"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <User className="size-3.5 text-blue-500" />
+          <User className="size-3.5" />
           Solo Events ({totalSoloParticipants})
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("table")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-colors ${
             activeTab === "table"
               ? "bg-card text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground"
@@ -269,9 +267,9 @@ export function AdminEventRegistrationsFullClient({
             <button
               type="button"
               onClick={() => setSelectedSportFilter("ALL")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+              className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                 selectedSportFilter === "ALL"
-                  ? "bg-brand text-brand-foreground shadow-sm"
+                  ? "bg-brand text-brand-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
@@ -284,9 +282,9 @@ export function AdminEventRegistrationsFullClient({
                   key={g.sport}
                   type="button"
                   onClick={() => setSelectedSportFilter(g.sport)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold transition-all ${
+                  className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                     selectedSportFilter === g.sport
-                      ? "bg-brand text-brand-foreground shadow-sm"
+                      ? "bg-brand text-brand-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
@@ -296,83 +294,66 @@ export function AdminEventRegistrationsFullClient({
           </div>
 
           {/* Sports & Their Squads */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             {filteredTeamSports.map((group) => (
               <div
                 key={group.sport}
-                className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm"
+                className="rounded-lg border border-border bg-card overflow-hidden"
               >
                 {/* Sport Section Header */}
-                <div className="bg-muted/40 px-5 py-3.5 border-b border-border flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-7 items-center justify-center rounded-lg bg-brand text-brand-foreground font-bold text-xs">
-                      <Trophy className="size-3.5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-foreground">
-                        {group.sport}
-                      </h3>
-                      <p className="text-[11px] text-muted-foreground">
-                        {group.teams.length} team(s) registered
-                      </p>
-                    </div>
-                  </div>
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {group.sport}
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground">
+                    {group.teams.length} team(s) registered
+                  </span>
                 </div>
 
                 {/* Teams List */}
-                <div className="p-5">
+                <div className="p-4">
                   {group.teams.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-muted-foreground italic">
+                    <div className="py-8 text-center text-xs text-muted-foreground">
                       No teams registered for {group.sport} yet.
                     </div>
                   ) : (
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-3 md:grid-cols-2">
                       {group.teams.map((team, idx) => (
                         <div
-                          key={team.id || idx}
-                          className="rounded-xl border border-brand/30 bg-gradient-to-br from-brand/5 via-card to-background p-4 space-y-3"
+                          key={team.id ? `${team.id}-${group.sport}` : idx}
+                          className="rounded-lg border border-border p-3.5 space-y-2.5"
                         >
                           {/* Team Header */}
-                          <div className="flex items-start justify-between gap-2 border-b border-border/60 pb-2.5">
+                          <div className="flex items-start justify-between gap-2 border-b border-border pb-2">
                             <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-mono font-bold text-muted-foreground">
-                                  #{idx + 1}
-                                </span>
-                                <h4 className="text-base font-extrabold text-foreground">
-                                  {team.teamName}
-                                </h4>
-                              </div>
+                              <h4 className="text-sm font-bold text-foreground">
+                                {team.teamName}
+                              </h4>
                               <span className="text-[10px] text-muted-foreground">
-                                Registered: {new Date(team.registeredAt).toLocaleDateString()}
+                                Registered {new Date(team.registeredAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <Badge className="bg-brand text-brand-foreground text-[10px] font-bold border-none">
-                              {team.members.length > 0 ? `${team.members.length} Players` : "Team"}
-                            </Badge>
+                            <span className="text-[11px] font-medium text-muted-foreground shrink-0">
+                              {team.members.length > 0 ? `${team.members.length} players` : "Team"}
+                            </span>
                           </div>
 
-                          {/* Captain Info Card */}
-                          <div className="rounded-lg border border-border bg-card p-2.5 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2">
-                              <Crown className="size-4 text-brand shrink-0" />
-                              <div>
-                                <span className="text-[10px] uppercase font-bold text-brand block">
-                                  Captain
-                                </span>
-                                <span className="font-bold text-foreground">
-                                  {team.captain.name}
-                                </span>
-                                <span className="text-muted-foreground text-[11px] block">
-                                  {team.captain.department || "Allied Health Sciences"}
-                                  {team.captain.rollNumber && ` · Roll #${team.captain.rollNumber}`}
-                                </span>
-                              </div>
+                          {/* Captain */}
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Crown className="size-3.5 text-brand shrink-0" />
+                              <span className="font-semibold text-foreground truncate">
+                                {team.captain.name}
+                              </span>
+                              <span className="text-muted-foreground truncate">
+                                {team.captain.department || "Allied Health Sciences"}
+                                {team.captain.rollNumber && ` · #${team.captain.rollNumber}`}
+                              </span>
                             </div>
                             {team.captain.phone && (
                               <a
                                 href={`tel:${team.captain.phone}`}
-                                className="flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline shrink-0 ml-2"
+                                className="flex items-center gap-1 text-[11px] font-medium text-brand hover:underline shrink-0 ml-2"
                               >
                                 <Phone className="size-3" /> {team.captain.phone}
                               </a>
@@ -381,39 +362,23 @@ export function AdminEventRegistrationsFullClient({
 
                           {/* Squad Roster */}
                           {team.members && team.members.length > 0 && (
-                            <div className="space-y-1.5 pt-1">
-                              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider block">
-                                Squad Roster
-                              </span>
-                              <div className="rounded-lg border border-border/60 divide-y divide-border/40 text-xs bg-background/50 max-h-36 overflow-y-auto">
-                                {team.members.map((member: TeamMember, mIdx: number) => (
-                                  <div
-                                    key={mIdx}
-                                    className="px-3 py-1.5 flex items-center justify-between"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {member.is_captain ? (
-                                        <Crown className="size-3 text-brand shrink-0" />
-                                      ) : (
-                                        <span className="text-[10px] font-mono text-muted-foreground">
-                                          {mIdx + 1}
-                                        </span>
-                                      )}
-                                      <span className="font-medium text-foreground">
-                                        {member.name}
-                                        {member.is_captain && (
-                                          <span className="text-[9px] text-brand font-bold ml-1">
-                                            (C)
-                                          </span>
-                                        )}
-                                      </span>
-                                    </div>
-                                    <span className="text-[11px] text-muted-foreground">
-                                      {member.roll_number || member.department || "—"}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
+                            <div className="rounded-md border border-border divide-y divide-border text-xs max-h-32 overflow-y-auto">
+                              {team.members.map((member: TeamMember, mIdx: number) => (
+                                <div
+                                  key={mIdx}
+                                  className="px-2.5 py-1.5 flex items-center justify-between"
+                                >
+                                  <span className="font-medium text-foreground">
+                                    {member.name}
+                                    {member.is_captain && (
+                                      <span className="text-muted-foreground font-normal"> (C)</span>
+                                    )}
+                                  </span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {member.roll_number || member.department || "—"}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           )}
                         </div>
@@ -431,7 +396,7 @@ export function AdminEventRegistrationsFullClient({
       {activeTab === "solo" && (
         <div className="space-y-6">
           {soloSports.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border p-12 text-center bg-card/50">
+            <div className="rounded-lg border border-dashed border-border p-12 text-center">
               <User className="size-10 text-muted-foreground/30 mx-auto mb-3" />
               <h4 className="text-base font-bold text-foreground">No Solo Registrations Yet</h4>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
@@ -439,19 +404,19 @@ export function AdminEventRegistrationsFullClient({
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               {soloSports.map((group) => (
                 <div
                   key={group.sport}
-                  className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm"
+                  className="rounded-lg border border-border bg-card overflow-hidden"
                 >
-                  <div className="bg-muted/40 px-4 py-3 border-b border-border flex items-center justify-between">
-                    <span className="text-xs font-bold text-foreground">
+                  <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">
                       {group.sport}
                     </span>
-                    <Badge variant="outline" className="text-[10px]">
+                    <span className="text-[11px] text-muted-foreground">
                       {group.soloParticipants.length} participant(s)
-                    </Badge>
+                    </span>
                   </div>
 
                   <div className="p-4">
@@ -498,7 +463,7 @@ export function AdminEventRegistrationsFullClient({
             </span>
           </div>
 
-          <div className="rounded-xl border border-border overflow-hidden bg-card">
+          <div className="rounded-lg border border-border overflow-hidden bg-card">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">

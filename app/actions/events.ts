@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from "@/src/lib/supabase/admin";
 import { getSession } from "@/lib/auth/session";
 import { revalidatePath } from "next/cache";
 
-import { SPORTS_LIST, TEAM_SPORTS } from "@/lib/sports-constants";
+import { SPORTS_LIST, TEAM_SPORTS, splitRegistrationBySport } from "@/lib/sports-constants";
 import type { TeamMember } from "@/types/database";
 
 /**
@@ -311,64 +311,58 @@ export async function getEventTeamsBySport(
     // Map each sport to its groups
     const sportsMap = new Map<string, SportTeamGroup>();
 
+    const ensureGroup = (sport: string) => {
+      if (!sportsMap.has(sport)) {
+        const isTeam = (TEAM_SPORTS as readonly string[]).includes(sport);
+        sportsMap.set(sport, {
+          sport,
+          isTeamSport: isTeam,
+          teams: [],
+          soloParticipants: [],
+        });
+      }
+      return sportsMap.get(sport)!;
+    };
+
     // Initialize all known sports in order
-    const allSports = [...SPORTS_LIST];
-    for (const sport of allSports) {
-      const isTeam = (TEAM_SPORTS as readonly string[]).includes(sport);
-      sportsMap.set(sport, {
-        sport,
-        isTeamSport: isTeam,
-        teams: [],
-        soloParticipants: [],
-      });
+    for (const sport of SPORTS_LIST) {
+      ensureGroup(sport);
     }
 
-    // Populate registrations into sports
+    // Populate registrations into sports — each row can contain several
+    // solo sports AND several captained teams at once, so split it first.
     for (const reg of registrationsData) {
-      const sports: string[] = Array.isArray(reg.sport_choices) ? reg.sport_choices : [];
       const profile = reg.profiles || {};
+      const { soloSports, teamEntries } = splitRegistrationBySport(reg);
 
-      for (const sport of sports) {
-        if (!sportsMap.has(sport)) {
-          const isTeam = (TEAM_SPORTS as readonly string[]).includes(sport);
-          sportsMap.set(sport, {
-            sport,
-            isTeamSport: isTeam,
-            teams: [],
-            soloParticipants: [],
-          });
-        }
+      for (const sport of soloSports) {
+        ensureGroup(sport).soloParticipants.push({
+          id: reg.id,
+          name: profile.full_name || "Participant",
+          department: profile.department || profile.course,
+          course: profile.course,
+          rollNumber: profile.roll_number,
+          phone: reg.phone_number,
+          registeredAt: reg.registered_at,
+        });
+      }
 
-        const group = sportsMap.get(sport)!;
-
-        if (reg.team_name) {
-          // Team registration
-          group.teams.push({
-            id: reg.id,
-            teamName: reg.team_name,
-            captain: {
-              name: profile.full_name || "Captain",
-              email: profile.email,
-              department: profile.department || profile.course,
-              course: profile.course,
-              rollNumber: profile.roll_number,
-              phone: reg.phone_number,
-            },
-            members: Array.isArray(reg.team_members) ? reg.team_members : [],
-            registeredAt: reg.registered_at,
-          });
-        } else {
-          // Solo participant
-          group.soloParticipants.push({
-            id: reg.id,
-            name: profile.full_name || "Participant",
-            department: profile.department || profile.course,
+      for (const entry of teamEntries) {
+        const captainMember = entry.members.find((m) => m.is_captain);
+        ensureGroup(entry.sport).teams.push({
+          id: reg.id,
+          teamName: entry.teamName,
+          captain: {
+            name: captainMember?.name || profile.full_name || "Captain",
+            email: profile.email,
+            department: captainMember?.department || profile.department || profile.course,
             course: profile.course,
-            rollNumber: profile.roll_number,
-            phone: reg.phone_number,
-            registeredAt: reg.registered_at,
-          });
-        }
+            rollNumber: captainMember?.roll_number || profile.roll_number,
+            phone: captainMember?.phone || reg.phone_number,
+          },
+          members: entry.members,
+          registeredAt: reg.registered_at,
+        });
       }
     }
 
