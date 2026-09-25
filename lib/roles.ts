@@ -108,13 +108,13 @@ export function getAllowedAdminRoutes(role: string | null | undefined): string[]
   const r = role ?? "";
 
   if (MEMBER_MANAGEMENT_ROLES.has(r)) {
-    // VP and President — everything
     return [
       "/dashboard/admin",
       "/dashboard/admin/users",
       "/dashboard/admin/memberships",
       "/dashboard/admin/notices",
       "/dashboard/admin/events",
+      "/dashboard/admin/gallery",
       "/dashboard/admin/grievances",
       "/dashboard/admin/library",
       "/dashboard/admin/meetings",
@@ -123,12 +123,12 @@ export function getAllowedAdminRoutes(role: string | null | undefined): string[]
   }
 
   if (GOVERNING_BODY_ROLES.has(r)) {
-    // Governing body — no Users page, but everything else
     return [
       "/dashboard/admin",
       "/dashboard/admin/memberships",
       "/dashboard/admin/notices",
       "/dashboard/admin/events",
+      "/dashboard/admin/gallery",
       "/dashboard/admin/grievances",
       "/dashboard/admin/library",
       "/dashboard/admin/meetings",

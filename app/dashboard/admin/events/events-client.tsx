@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { createEvent, updateEvent, deleteEvent } from "@/app/actions/admin/events"
-import { getEventRegistrations, EventRegistrationDetail } from "@/app/actions/admin/event-registrations"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -29,7 +28,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu"
-import Link from "next/link"
 import {
   MoreHorizontal,
   Plus,
@@ -38,13 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
-  Download,
   Trophy,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Crown,
-  ExternalLink,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -61,46 +53,8 @@ export type EventDB = {
   created_at: string
 }
 
-function exportToCSV(registrations: EventRegistrationDetail[], eventTitle: string) {
-  const headers = [
-    "Name",
-    "Roll Number",
-    "Department / Course",
-    "Batch Year",
-    "Phone",
-    "Sports / Events",
-    "Team Name",
-    "Role",
-    "Squad Roster",
-    "Waiver Accepted",
-    "Registered At",
-  ]
-
-  const rows = registrations.map((r) => [
-    r.profile.full_name ?? "",
-    r.profile.roll_number ?? "",
-    [r.profile.course, r.profile.department].filter(Boolean).join(" / "),
-    r.profile.batch_year ?? "",
-    r.phone_number ?? "",
-    r.sport_choices.join("; "),
-    r.team_name ?? "",
-    r.is_captain ? "Captain" : "Participant",
-    (r.team_members || []).map((m) => `${m.name}${m.roll_number ? ` (${m.roll_number})` : ""}`).join("; "),
-    r.waiver_accepted ? "Yes" : "No",
-    new Date(r.registered_at).toLocaleString(),
-  ])
-
-  const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-    .join("\n")
-
-  const blob = new Blob([csv], { type: "text/csv" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = `${eventTitle.replace(/\s+/g, "_")}_registrations.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+function exportToCSV(data: any[], eventTitle: string) {
+  // placeholder kept for CSV compat in full-page
 }
 
 export function EventsClient({
@@ -117,11 +71,6 @@ export function EventsClient({
   const [editingEvent, setEditingEvent] = useState<EventDB | null>(null)
   const [deletingEvent, setDeletingEvent] = useState<EventDB | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Registrations viewer state
-  const [viewingEvent, setViewingEvent] = useState<EventDB | null>(null)
-  const [registrations, setRegistrations] = useState<EventRegistrationDetail[]>([])
-  const [regsLoading, setRegsLoading] = useState(false)
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -165,17 +114,8 @@ export function EventsClient({
     }
   }
 
-  const handleViewRegistrations = async (event: EventDB) => {
-    setViewingEvent(event)
-    setRegsLoading(true)
-    const result = await getEventRegistrations(parseInt(event.id))
-    setRegsLoading(false)
-    if (result.success && result.data) {
-      setRegistrations(result.data)
-    } else {
-      toast.error(result.error || "Failed to load registrations")
-      setRegistrations([])
-    }
+  const handleViewRegistrationsFull = (eventId: string) => {
+    router.push(`/dashboard/admin/events/${eventId}/registrations`)
   }
 
   const formatDateTimeLocal = (dateString: string) => {
@@ -273,14 +213,9 @@ export function EventsClient({
                       <DropdownMenuContent align="end">
                         <DropdownMenuGroup>
                           <DropdownMenuItem
-                            onClick={() => handleViewRegistrations(event)}
-                          >
-                            <Users className="mr-2 h-4 w-4" /> View Registrations
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
                             onClick={() => router.push(`/dashboard/admin/events/${event.id}/registrations`)}
                           >
-                            <ExternalLink className="mr-2 h-4 w-4 text-brand" /> Full Page Registrations
+                            <Users className="mr-2 h-4 w-4 text-brand" /> View Registrations
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setEditingEvent(event)}>
                             <Pencil className="mr-2 h-4 w-4" /> Edit
@@ -330,180 +265,6 @@ export function EventsClient({
           </div>
         )}
       </div>
-
-      {/* ── Registrations Viewer Dialog ──────────────────────────────── */}
-      <Dialog
-        open={!!viewingEvent}
-        onOpenChange={(open) => !open && setViewingEvent(null)}
-      >
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
-            <div>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <Users className="size-4 text-primary" />
-                Registrations — {viewingEvent?.title}
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {regsLoading
-                  ? "Loading..."
-                  : `${registrations.length} student${registrations.length !== 1 ? "s" : ""} registered`}
-              </p>
-            </div>
-            {viewingEvent && (
-              <Button
-                size="sm"
-                variant="outline"
-                asChild
-                className="gap-1.5 text-xs font-semibold shrink-0"
-              >
-                <Link href={`/dashboard/admin/events/${viewingEvent.id}/registrations`}>
-                  <ExternalLink className="size-3.5 text-brand" /> Full Page View
-                </Link>
-              </Button>
-            )}
-          </DialogHeader>
-
-          {regsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : registrations.length === 0 ? (
-            <div className="py-12 text-center text-xs text-muted-foreground border rounded-lg border-border">
-              No registrations yet.
-            </div>
-          ) : (
-            <div className="rounded-lg border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead className="text-xs font-semibold py-2">#</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Name</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Roll No.</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Dept / Course</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Team / Squad</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Phone</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Sports</TableHead>
-                    <TableHead className="text-xs font-semibold py-2 text-center">Waiver</TableHead>
-                    <TableHead className="text-xs font-semibold py-2">Registered</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {registrations.map((reg, idx) => (
-                    <TableRow key={reg.id} className="hover:bg-muted/20">
-                      <TableCell className="py-2 text-xs text-muted-foreground">
-                        {idx + 1}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs font-medium max-w-[130px] truncate">
-                        {reg.profile.full_name ?? "—"}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs text-muted-foreground font-mono">
-                        {reg.profile.roll_number ?? "—"}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs text-muted-foreground max-w-[120px] truncate">
-                        {reg.profile.course || reg.profile.department || "—"}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs">
-                        {reg.team_name ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-foreground truncate max-w-[130px]">
-                              {reg.team_name}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              {reg.is_captain && (
-                                <Badge className="text-[8px] px-1 py-0 bg-brand text-brand-foreground font-bold border-none">
-                                  <Crown className="size-2 mr-0.5" /> Captain
-                                </Badge>
-                              )}
-                              {reg.team_members && reg.team_members.length > 0 && (
-                                <span className="text-[10px] text-muted-foreground">
-                                  {reg.team_members.length} players
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-[10px] text-muted-foreground italic">Solo</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs text-muted-foreground">
-                        {reg.phone_number ?? "—"}
-                      </TableCell>
-                      <TableCell className="py-2">
-                        {reg.sport_choices.length > 0 ? (
-                          <div className="flex flex-wrap gap-0.5 max-w-[160px]">
-                            {reg.sport_choices.map((s) => (
-                              <Badge
-                                key={s}
-                                className="text-[9px] px-1 py-0 bg-brand/10 text-brand border border-brand/30"
-                              >
-                                {s}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2 text-center">
-                        {reg.waiver_accepted ? (
-                          <CheckCircle2 className="size-3.5 text-emerald-600 mx-auto" />
-                        ) : (
-                          <XCircle className="size-3.5 text-destructive mx-auto" />
-                        )}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(reg.registered_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-
-          <DialogFooter className="gap-2 pt-2 sm:justify-between">
-            {viewingEvent ? (
-              <Button
-                size="sm"
-                variant="outline"
-                asChild
-                className="gap-1.5 text-xs font-semibold"
-              >
-                <Link href={`/dashboard/admin/events/${viewingEvent.id}/registrations`}>
-                  <ExternalLink className="size-3.5 text-brand" /> Open Full Page View
-                </Link>
-              </Button>
-            ) : <div />}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setViewingEvent(null)}
-              >
-                Close
-              </Button>
-              {!regsLoading && registrations.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="gap-1.5"
-                  onClick={() =>
-                    exportToCSV(registrations, viewingEvent?.title ?? "event")
-                  }
-                >
-                  <Download className="size-3.5" />
-                  Export CSV
-                </Button>
-              )}
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* ── Create Dialog ─────────────────────────────────────────────── */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>

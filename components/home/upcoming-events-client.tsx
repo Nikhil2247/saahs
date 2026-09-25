@@ -30,6 +30,7 @@ import {
   Zap,
   CheckCircle2,
   Info,
+  XCircle,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -72,6 +73,12 @@ export function UpcomingEventsClient({
   // Details dialog
   const [detailsEvent, setDetailsEvent] = useState<EventItem | null>(null)
 
+  // Registered event info dialog (for already-registered events)
+  const [registeredViewEvent, setRegisteredViewEvent] = useState<EventItem | null>(null)
+
+  // Cancel confirmation dialog
+  const [cancelConfirmEvent, setCancelConfirmEvent] = useState<EventItem | null>(null)
+
   // Sports registration dialog
   const [sportsEvent, setSportsEvent] = useState<EventItem | null>(null)
   const [selectedSoloSports, setSelectedSoloSports] = useState<string[]>([])
@@ -112,7 +119,9 @@ export function UpcomingEventsClient({
     })
   }
 
-  const handleCancel = (eventId: number) => {
+  const handleCancelConfirmed = (eventId: number) => {
+    setCancelConfirmEvent(null)
+    setRegisteredViewEvent(null)
     startTransition(async () => {
       const result = await cancelEventRegistration(eventId)
       if (result.success) {
@@ -179,7 +188,8 @@ export function UpcomingEventsClient({
                 key={event.id}
                 className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-background transition-all duration-200 hover:shadow-xl hover:border-brand/40 hover:-translate-y-0.5 cursor-pointer"
                 onClick={() => {
-                  if (isSports && !isRegistered) openSportsDialog(event)
+                  if (isRegistered) setRegisteredViewEvent(event)
+                  else if (isSports) openSportsDialog(event)
                   else setDetailsEvent(event)
                 }}
               >
@@ -236,6 +246,15 @@ export function UpcomingEventsClient({
                       </span>
                     </div>
                   )}
+
+                  {/* Registered hover overlay */}
+                  {isRegistered && (
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 bg-emerald-500/90 text-white">
+                        <CheckCircle2 className="size-3.5" /> View Registration
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card body */}
@@ -272,15 +291,15 @@ export function UpcomingEventsClient({
                   >
                     <button
                       className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      onClick={() => setDetailsEvent(event)}
+                      onClick={() => isRegistered ? setRegisteredViewEvent(event) : setDetailsEvent(event)}
                     >
-                      <Info className="size-3.5" /> Details
+                      <Info className="size-3.5" /> {isRegistered ? "My Registration" : "Details"}
                     </button>
 
                     {isRegistered ? (
                       <button
-                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-rose-600 transition-colors"
-                        onClick={() => handleCancel(event.id)}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                        onClick={() => setRegisteredViewEvent(event)}
                         disabled={isPending}
                       >
                         <CheckCircle2 className="size-3.5" /> Registered
@@ -371,6 +390,101 @@ export function UpcomingEventsClient({
                 <Link href="/login">Login to Register</Link>
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Registered Event Info Dialog ──────────────────────────── */}
+      <Dialog open={!!registeredViewEvent} onOpenChange={(open) => !open && setRegisteredViewEvent(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-emerald-500/15">
+                <CheckCircle2 className="size-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">You are Registered</p>
+                <DialogTitle className="text-sm font-bold leading-tight">{registeredViewEvent?.title}</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-3 py-1 text-xs">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 p-3">
+              <p className="text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
+                ✓ Your registration for this event is confirmed. No further action needed.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 rounded-md bg-muted/30 p-2.5 border border-border">
+              <div>
+                <span className="text-muted-foreground block text-[10px]">Date &amp; Time</span>
+                <span className="font-semibold text-foreground">
+                  {registeredViewEvent?.schedule && new Date(registeredViewEvent.schedule).toLocaleString(undefined, {
+                    month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground block text-[10px]">Venue</span>
+                <span className="font-semibold text-foreground">{registeredViewEvent?.venue}</span>
+              </div>
+            </div>
+            {registeredViewEvent?.category === "Sports" && (
+              <div className="rounded-md bg-muted/20 border border-border p-2.5">
+                <p className="text-muted-foreground text-[10px] mb-1">Sports Registration</p>
+                <p className="text-xs text-foreground">Visit the <Link href="/sports" className="text-brand font-semibold hover:underline">Sports Festival page</Link> to view your team details and roster.</p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 border-destructive/30 text-xs"
+              onClick={() => {
+                setRegisteredViewEvent(null)
+                setCancelConfirmEvent(registeredViewEvent)
+              }}
+              disabled={isPending}
+            >
+              <XCircle className="size-3.5 mr-1" /> Cancel Registration
+            </Button>
+            <Button size="sm" onClick={() => setRegisteredViewEvent(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Cancel Confirmation Dialog ────────────────────────────── */}
+      <Dialog open={!!cancelConfirmEvent} onOpenChange={(open) => !open && setCancelConfirmEvent(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10 mb-2">
+              <AlertTriangle className="size-5 text-destructive" />
+            </div>
+            <DialogTitle className="text-base font-bold">Cancel Registration?</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 text-sm text-muted-foreground">
+            Are you sure you want to cancel your registration for{" "}
+            <strong className="text-foreground">{cancelConfirmEvent?.title}</strong>? This action cannot be undone.
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCancelConfirmEvent(null)}
+              disabled={isPending}
+            >
+              Keep Registration
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={isPending}
+              onClick={() => cancelConfirmEvent && handleCancelConfirmed(cancelConfirmEvent.id)}
+            >
+              {isPending ? "Cancelling..." : "Yes, Cancel"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

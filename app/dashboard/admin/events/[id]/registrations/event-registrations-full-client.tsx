@@ -109,10 +109,15 @@ export function AdminEventRegistrationsFullClient({
       });
   }, [teamsBySport, selectedSportFilter]);
 
-  // Solo sports groups
+  // Solo sports groups — only those with actual participants
   const soloSports = useMemo(() => {
-    return teamsBySport.filter((g) => !g.isTeamSport);
+    return teamsBySport.filter((g) => !g.isTeamSport && g.soloParticipants.length > 0);
   }, [teamsBySport]);
+
+  // Total solo participants count
+  const totalSoloParticipants = useMemo(() => {
+    return soloSports.reduce((acc, g) => acc + g.soloParticipants.length, 0);
+  }, [soloSports]);
 
   // Filtered table rows
   const filteredTableRows = useMemo(() => {
@@ -241,7 +246,7 @@ export function AdminEventRegistrationsFullClient({
           }`}
         >
           <User className="size-3.5 text-blue-500" />
-          Solo Events
+          Solo Events ({totalSoloParticipants})
         </button>
         <button
           type="button"
@@ -424,48 +429,54 @@ export function AdminEventRegistrationsFullClient({
 
       {/* ── TAB 2: SOLO EVENTS ──────────────────────────────────────── */}
       {activeTab === "solo" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          {soloSports.map((group) => (
-            <div
-              key={group.sport}
-              className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm"
-            >
-              <div className="bg-muted/40 px-4 py-3 border-b border-border flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">
-                  {group.sport}
-                </span>
-                <Badge variant="outline" className="text-[10px]">
-                  {group.soloParticipants.length} participant(s)
-                </Badge>
-              </div>
-
-              <div className="p-4">
-                {group.soloParticipants.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic py-3 text-center">
-                    No individual registrations yet.
-                  </p>
-                ) : (
-                  <div className="divide-y divide-border/60 text-xs">
-                    {group.soloParticipants.map((p, idx) => (
-                      <div key={idx} className="py-2 flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-foreground">{p.name}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {p.department || "Allied Health"} {p.rollNumber && `· #${p.rollNumber}`}
-                          </p>
-                        </div>
-                        {p.phone && (
-                          <span className="text-[11px] text-muted-foreground font-mono">
-                            {p.phone}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+        <div className="space-y-6">
+          {soloSports.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-12 text-center bg-card/50">
+              <User className="size-10 text-muted-foreground/30 mx-auto mb-3" />
+              <h4 className="text-base font-bold text-foreground">No Solo Registrations Yet</h4>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
+                No students have registered for individual solo events yet.
+              </p>
             </div>
-          ))}
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2">
+              {soloSports.map((group) => (
+                <div
+                  key={group.sport}
+                  className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm"
+                >
+                  <div className="bg-muted/40 px-4 py-3 border-b border-border flex items-center justify-between">
+                    <span className="text-xs font-bold text-foreground">
+                      {group.sport}
+                    </span>
+                    <Badge variant="outline" className="text-[10px]">
+                      {group.soloParticipants.length} participant(s)
+                    </Badge>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="divide-y divide-border/60 text-xs">
+                      {group.soloParticipants.map((p, idx) => (
+                        <div key={idx} className="py-2 flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold text-foreground">{p.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {p.department || "Allied Health"} {p.rollNumber && `· #${p.rollNumber}`}
+                            </p>
+                          </div>
+                          {p.phone && (
+                            <span className="text-[11px] text-muted-foreground font-mono">
+                              {p.phone}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

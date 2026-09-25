@@ -15,11 +15,12 @@ import {
   searchRegisteredMembers,
 } from "@/app/actions/events";
 import {
-  SOLO_SPORTS,
-  TEAM_SPORTS,
-  TEAM_SPORTS_CONFIG,
-  type TeamSport,
-} from "@/lib/sports-constants";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,6 +56,12 @@ import {
 import { toast } from "sonner";
 import type { EventRow, TeamMember } from "@/types/database";
 import type { SportTeamGroup, MultiTeamEntry } from "@/app/actions/events";
+import {
+  SOLO_SPORTS,
+  TEAM_SPORTS,
+  TEAM_SPORTS_CONFIG,
+  type TeamSport,
+} from "@/lib/sports-constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -474,9 +481,9 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
   // Contact phone (for captain)
   const [captainPhone, setCaptainPhone] = useState(profile.phone_number || "");
 
-  // Waiver
   const [waiverAccepted, setWaiverAccepted] = useState(false);
   const [waiverExpanded, setWaiverExpanded] = useState(false);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
   const [isPending, startTransition] = useTransition();
 
@@ -589,7 +596,11 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
   };
 
   const handleCancel = () => {
-    if (!confirm("Cancel your sports event registration?")) return;
+    setCancelConfirmOpen(true);
+  };
+
+  const handleCancelConfirmed = () => {
+    setCancelConfirmOpen(false);
     startTransition(async () => {
       const res = await cancelEventRegistration(event.id);
       if (res.success) { setIsRegistered(false); setCurrentReg(null); toast.info("Registration cancelled."); }
@@ -600,6 +611,7 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
+    <>
     <div className="pb-20">
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
@@ -701,6 +713,8 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
           </div>
         )}
 
+        {/* ── Registration Form (hidden when already registered) ────────── */}
+        {!isRegistered && (
         <div className="grid gap-8 lg:grid-cols-12">
 
           {/* ── Left: Event List ────────────────────────────────────────── */}
@@ -975,6 +989,7 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
             </div>
           </div>
         </div>
+        )} {/* end !isRegistered form */}
 
         {/* ── Registered Teams Board ───────────────────────────────────── */}
         <section className="mt-16 pt-10 border-t border-border">
@@ -1061,5 +1076,29 @@ export function SportsRegistrationClient({ event, isLoggedIn, profile, existingR
         </section>
       </div>
     </div>
+
+    {/* ── Cancel Confirmation Dialog ───────────────────────────────── */}
+    <Dialog open={cancelConfirmOpen} onOpenChange={(open) => !open && setCancelConfirmOpen(false)}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <div className="flex size-10 items-center justify-center rounded-xl bg-destructive/10 mb-2">
+            <AlertTriangle className="size-5 text-destructive" />
+          </div>
+          <DialogTitle className="text-base font-bold">Cancel Sports Registration?</DialogTitle>
+        </DialogHeader>
+        <div className="py-2 text-sm text-muted-foreground">
+          Are you sure you want to cancel your registration for the <strong className="text-foreground">SAAHS Sports Festival 2026</strong>? All your team and solo registrations will be removed.
+        </div>
+        <DialogFooter className="gap-2">
+          <Button size="sm" variant="outline" onClick={() => setCancelConfirmOpen(false)} disabled={isPending}>
+            Keep Registration
+          </Button>
+          <Button size="sm" variant="destructive" disabled={isPending} onClick={handleCancelConfirmed}>
+            {isPending ? "Cancelling..." : "Yes, Cancel"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

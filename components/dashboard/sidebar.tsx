@@ -22,6 +22,7 @@ import {
   Crown,
   Shield,
   BookMarked,
+  Camera,
 } from "lucide-react";
 import { getAllowedAdminRoutes, getRoleTier, isLeadership, isFaculty } from "@/lib/roles";
 
@@ -33,6 +34,7 @@ const ALL_ADMIN_LINKS = [
   { href: "/dashboard/admin/memberships", label: "Memberships", icon: Users },
   { href: "/dashboard/admin/notices", label: "Notices & Minutes", icon: Bell },
   { href: "/dashboard/admin/events", label: "Events", icon: Calendar },
+  { href: "/dashboard/admin/gallery", label: "Event Gallery", icon: Camera },
   { href: "/dashboard/admin/grievances", label: "Grievances", icon: ClipboardList },
   { href: "/dashboard/admin/library", label: "E-Library", icon: BookOpen },
   { href: "/dashboard/admin/meetings", label: "Meetings & Minutes", icon: FileText },
