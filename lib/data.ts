@@ -456,6 +456,7 @@ export const navLinks = [
   { label: "About", href: "/about" },
   { label: "Leadership & Courses", href: "/leadership" },
   { label: "Sports Fest", href: "/sports" },
+  { label: "Vibe-e-Mehfil", href: "/vibe-e-mehfil" },
   { label: "Event Gallery", href: "/gallery" },
   { label: "E-Library", href: "/e-library" },
   { label: "Help Desk", href: "/help-desk" },

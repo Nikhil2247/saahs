@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   Info,
   XCircle,
+  Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -93,6 +94,8 @@ export function UpcomingEventsClient({
   const openSportsDialog = (event: EventItem) => {
     router.push("/sports")
   }
+
+  const isMehfilEvent = (event: EventItem) => event.title.includes("Vibe-e-Mehfil")
 
   const toggleSolo = (s: string) =>
     setSelectedSoloSports((p) => (p.includes(s) ? p.filter((x) => x !== s) : [...p, s]))
@@ -181,6 +184,7 @@ export function UpcomingEventsClient({
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {events.map((event) => {
             const isSports = event.category === "Sports"
+            const isMehfil = isMehfilEvent(event)
             const isRegistered = registeredIds.has(event.id)
 
             return (
@@ -190,6 +194,7 @@ export function UpcomingEventsClient({
                 onClick={() => {
                   if (isRegistered) setRegisteredViewEvent(event)
                   else if (isSports) openSportsDialog(event)
+                  else if (isMehfil) router.push("/vibe-e-mehfil")
                   else setDetailsEvent(event)
                 }}
               >
@@ -233,13 +238,15 @@ export function UpcomingEventsClient({
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
                       <span
                         className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 ${
-                          isSports
+                          isSports || isMehfil
                             ? "bg-brand text-brand-foreground"
                             : "bg-white/90 text-foreground"
                         }`}
                       >
                         {isSports ? (
                           <><Trophy className="size-3.5" /> {isLoggedIn ? "Register Now" : "Login to Register"}</>
+                        ) : isMehfil ? (
+                          <><Sparkles className="size-3.5" /> {isLoggedIn ? "Register Now" : "Login to Register"}</>
                         ) : (
                           <>{isLoggedIn ? "View Details" : "View Details"}</>
                         )}
@@ -314,6 +321,14 @@ export function UpcomingEventsClient({
                           <Trophy className="mr-1 size-3" /> Register
                         </Link>
                       </Button>
+                    ) : isMehfil ? (
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs px-3 bg-brand hover:bg-brand/90 text-brand-foreground font-semibold"
+                        asChild
+                      >
+                        <Link href="/vibe-e-mehfil">Register</Link>
+                      </Button>
                     ) : (
                       <button
                         className="flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
@@ -385,6 +400,17 @@ export function UpcomingEventsClient({
                 <Trophy className="mr-1 size-3.5" /> Register Now
               </Button>
             )}
+            {detailsEvent && isMehfilEvent(detailsEvent) && !registeredIds.has(detailsEvent.id) && (
+              <Button
+                size="sm"
+                className="bg-brand hover:bg-brand/90 text-brand-foreground"
+                asChild
+              >
+                <Link href="/vibe-e-mehfil">
+                  <Sparkles className="mr-1 size-3.5" /> Register Now
+                </Link>
+              </Button>
+            )}
             {!isLoggedIn && (
               <Button size="sm" asChild>
                 <Link href="/login">Login to Register</Link>
@@ -433,6 +459,12 @@ export function UpcomingEventsClient({
               <div className="rounded-md bg-muted/20 border border-border p-2.5">
                 <p className="text-muted-foreground text-[10px] mb-1">Sports Registration</p>
                 <p className="text-xs text-foreground">Visit the <Link href="/sports" className="text-brand font-semibold hover:underline">Sports Festival page</Link> to view your team details and roster.</p>
+              </div>
+            )}
+            {registeredViewEvent && isMehfilEvent(registeredViewEvent) && (
+              <div className="rounded-md bg-muted/20 border border-border p-2.5">
+                <p className="text-muted-foreground text-[10px] mb-1">Vibe-e-Mehfil Registration</p>
+                <p className="text-xs text-foreground">Visit the <Link href="/vibe-e-mehfil" className="text-brand font-semibold hover:underline">Vibe-e-Mehfil page</Link> to view your event and team details.</p>
               </div>
             )}
           </div>
