@@ -79,7 +79,7 @@ export function SiteHeader() {
                 {isSports && <Trophy className="size-3.5 text-brand" />}
                 {isMehfil && <Palette className="size-3.5 text-brand" />}
                 {link.label}
-                {isSports && (
+                {(isSports || isMehfil) && (
                   <span className="rounded-full bg-brand/10 text-brand border border-brand/30 px-1.5 py-0.5 text-[10px] font-bold leading-none">
                     2026
                   </span>
