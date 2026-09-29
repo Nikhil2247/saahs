@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LayoutDashboard, User, LogOut, Shield, Trophy, Palette } from "lucide-react";
+import { Menu, X, LayoutDashboard, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BrandMark } from "@/components/brand-mark";
@@ -60,30 +60,19 @@ export function SiteHeader() {
 
         <nav className="hidden items-center gap-1 lg:flex">
           {navLinks.map((link) => {
-            const isSports = link.href === "/sports";
-            const isMehfil = link.href === "/vibe-e-mehfil";
             const active = isActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-secondary text-primary font-semibold"
-                    : isSports || isMehfil
-                    ? "text-brand hover:bg-brand/10 font-semibold"
+                    ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
-                {isSports && <Trophy className="size-3.5 text-brand" />}
-                {isMehfil && <Palette className="size-3.5 text-brand" />}
                 {link.label}
-                {(isSports || isMehfil) && (
-                  <span className="rounded-full bg-brand/10 text-brand border border-brand/30 px-1.5 py-0.5 text-[10px] font-bold leading-none">
-                    2026
-                  </span>
-                )}
               </Link>
             );
           })}
@@ -155,8 +144,6 @@ export function SiteHeader() {
         <div className="border-t border-border bg-card lg:hidden">
           <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3">
             {navLinks.map((link) => {
-              const isSports = link.href === "/sports";
-              const isMehfil = link.href === "/vibe-e-mehfil";
               const active = isActive(link.href);
               return (
                 <Link
@@ -164,24 +151,13 @@ export function SiteHeader() {
                   href={link.href}
                   onClick={() => setOpen(false)}
                   className={cn(
-                    "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    "rounded-md px-3 py-2 text-sm font-medium transition-colors",
                     active
-                      ? "bg-secondary text-primary font-semibold"
-                      : isSports || isMehfil
-                      ? "text-brand hover:bg-brand/10 font-semibold"
+                      ? "bg-secondary text-foreground"
                       : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                   )}
                 >
-                  <span className="flex items-center gap-2">
-                    {isSports && <Trophy className="size-4 text-brand" />}
-                    {isMehfil && <Palette className="size-4 text-brand" />}
-                    {link.label}
-                  </span>
-                  {(isSports || isMehfil) && (
-                    <span className="rounded-full bg-brand/10 text-brand border border-brand/30 px-2 py-0.5 text-[10px] font-bold">
-                      Open
-                    </span>
-                  )}
+                  {link.label}
                 </Link>
               );
             })}
